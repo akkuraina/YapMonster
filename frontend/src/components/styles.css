@@ -1,0 +1,46 @@
+.messages {
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    /* Hide scrollbar in Firefox */
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    /* Green gradient background */
+    padding: 10px;
+    /* Add padding for spacing */
+    gap: 10px;
+    /* Add spacing between messages */
+    border-radius: 10px;
+    /* Smooth corners */
+    height: 100%;
+    /* Ensures the messages section takes the full height */
+}
+
+.messages::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar in Chrome, Safari, Edge */
+}
+
+.messages span {
+    color: black;
+    /* Black text color for messages */
+    font-size: 16px;
+    /* Adjust font size for readability */
+    padding: 10px 15px;
+    /* Add padding inside message bubbles */
+    border-radius: 10px;
+    /* Rounded message bubbles */
+    background-color: rgba(255, 255, 255, 0.8);
+    /* Light translucent background for contrast */
+    max-width: 80%;
+    /* Ensure messages don’t stretch too wide */
+    align-self: flex-start;
+    /* Align messages to the start by default */
+}
+
+.messages span.sent {
+    align-self: flex-end;
+    /* Align sent messages to the right */
+    background-color: rgba(255, 255, 255, 0.9);
+    /* Slightly different background for sent messages */
+}

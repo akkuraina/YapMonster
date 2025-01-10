@@ -1,0 +1,31 @@
+{
+  "name": "yapmonster",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Akanksha Raina",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "frontend": "cd frontend && yarn start",
+    "backend": "cd backend && node server.js"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "^3.2.5",
+    "@emotion/react": "^11.14.0",
+    "bcryptjs": "^2.4.3",
+    "colors": "^1.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.3",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
