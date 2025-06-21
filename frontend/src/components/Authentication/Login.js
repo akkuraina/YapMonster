@@ -72,67 +72,131 @@ const Login = () => {
 
   return (
     <VStack 
-      spacing="10px" 
-      bg="green.300" 
-      color="green.900" 
-      p={5} 
-      borderRadius="md" 
-      boxShadow="lg"
-      minW="400px"
+      spacing="4" 
+      w="100%"
     >
       <FormControl id="email" isRequired>
-        <FormLabel>Email Address</FormLabel>
+        <FormLabel 
+          color="rgba(255, 255, 255, 0.9)"
+          fontWeight="600"
+          fontSize="sm"
+          mb={1}
+        >
+          Email Address
+        </FormLabel>
         <Input
           value={email}
           type="email"
           placeholder="Enter Your Email Address"
           onChange={(e) => setEmail(e.target.value)}
-          bg="green.300"
-          color="green.900"
-          _placeholder={{ color: "green.900" }}
+          bg="rgba(255, 255, 255, 0.1)"
+          border="1px solid rgba(255, 255, 255, 0.2)"
+          color="white"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+          _focus={{
+            borderColor: "#667eea",
+            boxShadow: "0 0 0 1px #667eea",
+            bg: "rgba(255, 255, 255, 0.15)"
+          }}
+          _hover={{
+            bg: "rgba(255, 255, 255, 0.15)"
+          }}
+          borderRadius="lg"
+          transition="all 0.3s ease-in-out"
+          size="md"
         />
       </FormControl>
       <FormControl id="password" isRequired>
-        <FormLabel>Password</FormLabel>
+        <FormLabel 
+          color="rgba(255, 255, 255, 0.9)"
+          fontWeight="600"
+          fontSize="sm"
+          mb={1}
+        >
+          Password
+        </FormLabel>
         <InputGroup size="md">
           <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type={show ? "text" : "password"}
             placeholder="Enter password"
-            bg="green.300"
-            color="green.900"
-            _placeholder={{ color: "green.900" }}
+            bg="rgba(255, 255, 255, 0.1)"
+            border="1px solid rgba(255, 255, 255, 0.2)"
+            color="white"
+            _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+            _focus={{
+              borderColor: "#667eea",
+              boxShadow: "0 0 0 1px #667eea",
+              bg: "rgba(255, 255, 255, 0.15)"
+            }}
+            _hover={{
+              bg: "rgba(255, 255, 255, 0.15)"
+            }}
+            borderRadius="lg"
+            transition="all 0.3s ease-in-out"
           />
           <InputRightElement width="4.5rem">
-            <Button h="1.75rem" size="sm" onClick={handleClick} bg="green.500" color="green.900" _hover={{ bg: "green.400" }}>
+            <Button 
+              h="1.75rem" 
+              size="sm" 
+              onClick={handleClick} 
+              bg="rgba(255, 255, 255, 0.1)"
+              border="1px solid rgba(255, 255, 255, 0.2)"
+              color="white"
+              _hover={{ 
+                bg: "rgba(255, 255, 255, 0.2)",
+                transform: "scale(1.05)"
+              }}
+              borderRadius="md"
+              transition="all 0.2s ease-in-out"
+            >
               {show ? "Hide" : "Show"}
             </Button>
           </InputRightElement>
         </InputGroup>
       </FormControl>
       <Button
-        colorScheme="green"
         width="100%"
-        style={{ marginTop: 15 }}
         onClick={submitHandler}
         isLoading={loading}
-        bg="green.500"
-        color="green.900"
-        _hover={{ bg: "green.400" }}
+        bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+        color="white"
+        _hover={{ 
+          transform: "translateY(-2px)",
+          boxShadow: "0 8px 25px rgba(90, 103, 216, 0.4)"
+        }}
+        _active={{
+          transform: "translateY(0)"
+        }}
+        borderRadius="lg"
+        py={2}
+        fontWeight="600"
+        fontSize="md"
+        transition="all 0.3s ease-in-out"
+        mt={2}
       >
         Login
       </Button>
       <Button
-        variant="solid"
-        bg="green.500"
-        color="green.900"
+        variant="ghost"
+        bg="rgba(255, 255, 255, 0.1)"
+        border="1px solid rgba(255, 255, 255, 0.2)"
+        color="rgba(255, 255, 255, 0.8)"
         width="100%"
         onClick={() => {
           setEmail("guest@example.com");
           setPassword("123456");
         }}
-        _hover={{ bg: "green.400" }}
+        _hover={{ 
+          bg: "rgba(255, 255, 255, 0.2)",
+          transform: "translateY(-1px)"
+        }}
+        borderRadius="lg"
+        py={2}
+        fontWeight="500"
+        fontSize="sm"
+        transition="all 0.3s ease-in-out"
       >
         Get Guest User Credentials
       </Button>

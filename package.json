@@ -8,7 +8,10 @@
   "main": "server.js",
   "scripts": {
     "start": "cd backend && node server.js",
-    "frontend": "cd frontend && yarn start",
+    "server": "cd backend && node server.js",
+    "client": "cd frontend && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "frontend": "cd frontend && npm start",
     "backend": "cd backend && node server.js"
   },
   "dependencies": {

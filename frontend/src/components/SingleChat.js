@@ -1,12 +1,12 @@
 import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
-import { Box, Text } from "@chakra-ui/layout";
+import { Box, Text, Flex, VStack } from "@chakra-ui/layout";
 import "./styles.css";
-import { IconButton, Spinner, useToast } from "@chakra-ui/react";
+import { IconButton, Spinner, useToast, Icon } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ArrowBackIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, ChatIcon } from "@chakra-ui/icons";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
@@ -162,104 +162,178 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <>
-          <Text
-            fontSize={{ base: "flex", md: "30px" }}
-            pb={3}
-            px={2}
-            w="100%"
-            fontFamily="Work sans"
-            display="flex"
-            justifyContent={{ base: "space-between" }}
-            alignItems="center"
-            color="green.700"
+          <Box
+            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+            p={4}
+            borderRadius="0 0 20px 20px"
+            boxShadow="0 4px 20px rgba(0, 0, 0, 0.1)"
+            mb={4}
           >
-            <IconButton
-              display={{ base: "flex", md: "40px" }}
-              icon={<ArrowBackIcon />}
-              onClick={() => setSelectedChat("")}
-              bg="green.300"
-              _hover={{ bg: "green.400" }}
-              color="white"
-            />
-            {messages &&
-              (!selectedChat.isGroupChat ? (
-                <>
-                  {getSender(user, selectedChat.users)}
-                  <ProfileModal
-                    user={getSenderFull(user, selectedChat.users)}
-                  />
-                </>
-              ) : (
-                <>
-                  {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
-                </>
-              ))}
-          </Text>
+            <Flex
+              alignItems="center"
+              justifyContent="space-between"
+              w="100%"
+            >
+              <IconButton
+                icon={<ArrowBackIcon />}
+                onClick={() => setSelectedChat("")}
+                bg="rgba(255, 255, 255, 0.2)"
+                backdropFilter="blur(10px)"
+                border="2px solid rgba(255, 255, 255, 0.3)"
+                color="white"
+                borderRadius="full"
+                _hover={{ 
+                  bg: "rgba(255, 255, 255, 0.3)",
+                  transform: "scale(1.05)",
+                  transition: "all 0.2s ease-in-out"
+                }}
+                transition="all 0.2s ease-in-out"
+              />
+              <Text
+                fontSize={{ base: "xl", md: "2xl" }}
+                fontFamily="'Poppins', sans-serif"
+                fontWeight="700"
+                color="white"
+                textAlign="center"
+                flex="1"
+                mx={4}
+              >
+                {messages &&
+                  (!selectedChat.isGroupChat ? (
+                    <Flex alignItems="center" justifyContent="center" gap={3}>
+                      <Text>{getSender(user, selectedChat.users)}</Text>
+                      <ProfileModal
+                        user={getSenderFull(user, selectedChat.users)}
+                      />
+                    </Flex>
+                  ) : (
+                    <Flex alignItems="center" justifyContent="center" gap={3}>
+                      <Text>{selectedChat.chatName.toUpperCase()}</Text>
+                      <UpdateGroupChatModal
+                        fetchMessages={fetchMessages}
+                        fetchAgain={fetchAgain}
+                        setFetchAgain={setFetchAgain}
+                      />
+                    </Flex>
+                  ))}
+              </Text>
+            </Flex>
+          </Box>
+          
           <Box
             display="flex"
             flexDir="column"
-            justifyContent="centre"
-            p={3}
-            bg="green.100"
+            justifyContent="space-between"
+            p={6}
+            bg="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
             w="100%"
             h="100%"
-            borderRadius="lg"
-            overflowY="hidden"
+            borderRadius="20px"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+            border="1px solid rgba(102, 126, 234, 0.1)"
           >
             {loading ? (
-              <Spinner
-                size="xl"
-                w={20}
-                h={20}
-                alignSelf="center"
-                margin="auto"
-                color="green.500"
-              />
+              <Flex justify="center" align="center" h="100%">
+                <Spinner
+                  size="xl"
+                  color="purple.500"
+                  thickness="4px"
+                  speed="0.65s"
+                />
+              </Flex>
             ) : (
-              <div className="messages">
+              <Box 
+                flex="1" 
+                mb={6}
+                pr={2}
+                overflow="hidden"
+                display="flex"
+                flexDirection="column"
+              >
                 <ScrollableChat messages={messages} />
-              </div>
+              </Box>
             )}
 
             <FormControl
               onKeyDown={sendMessage}
               id="first-name"
               isRequired
-              mt={3}
+              mt="auto"
+              flexShrink="0"
             >
               {istyping ? (
-                <div>
+                <Box mb={3} p={2} bg="purple.50" borderRadius="lg">
                   <Lottie
                     options={defaultOptions}
-                    width={50}
-                    style={{ marginBottom: 20, marginLeft: 0 }}
+                    width={40}
+                    style={{ marginLeft: 0 }}
                   />
-                </div>
-              ) : (
-                <></>
-              )}
+                </Box>
+              ) : null}
               <Input
                 variant="filled"
-                bg="green.200"
-                placeholder="Enter a message..."
+                bg="white"
+                placeholder="Type your message here..."
                 value={newMessage}
                 onChange={typingHandler}
-                _placeholder={{ color: "green.700" }}
-                color="green.900"
+                _placeholder={{ color: "gray.500" }}
+                color="gray.800"
+                borderRadius="full"
+                border="2px solid"
+                borderColor="purple.200"
+                focusBorderColor="purple.400"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
+                _focus={{
+                  boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
+                  transform: "translateY(-1px)",
+                  transition: "all 0.2s ease-in-out"
+                }}
+                transition="all 0.2s ease-in-out"
+                fontSize="md"
+                fontWeight="500"
               />
             </FormControl>
           </Box>
         </>
       ) : (
-        <Box display="flex" alignItems="center" justifyContent="center" h="100%" w="100%">
-          <Text fontSize="3xl" pb={3} fontFamily="Work sans" color="green.700">
-            Click on a user to start chatting
-          </Text>
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          justifyContent="center" 
+          h="100%" 
+          w="100%"
+          bg="#E6E6FA"
+          borderRadius="20px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+        >
+          <VStack spacing={6}>
+            <Box
+              p={8}
+              bg="white"
+              borderRadius="full"
+              boxShadow="0 8px 32px rgba(90, 103, 216, 0.2)"
+            >
+              <Icon as={ChatIcon} w={16} h={16} color="purple.600" />
+            </Box>
+            <Text 
+              fontSize={{ base: "2xl", md: "3xl" }} 
+              fontFamily="'Poppins', sans-serif" 
+              fontWeight="700"
+              color="purple.700"
+              textAlign="center"
+              maxW="400px"
+            >
+              Click on a user to start chatting
+            </Text>
+            <Text 
+              fontSize="md" 
+              color="gray.600"
+              textAlign="center"
+              maxW="300px"
+            >
+              Select a conversation from the sidebar to begin messaging
+            </Text>
+          </VStack>
         </Box>
       )}
     </>

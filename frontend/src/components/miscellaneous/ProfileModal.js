@@ -12,6 +12,7 @@ import {
   IconButton,
   Text,
   Image,
+  Avatar,
 } from "@chakra-ui/react";
 
 const ProfileModal = ({ user, children }) => {
@@ -23,21 +24,21 @@ const ProfileModal = ({ user, children }) => {
         <span onClick={onOpen}>{children}</span>
       ) : (
         <IconButton
-          display={{ base: "flex" }}
+          d={{ base: "flex" }}
           icon={<ViewIcon />}
           onClick={onOpen}
-          colorScheme="green" /* Green theme for the icon button */
+          colorScheme="purple" /* Purple theme for the icon button */
         />
       )}
       <Modal size="lg" onClose={onClose} isOpen={isOpen} isCentered>
         <ModalOverlay />
-        <ModalContent h="410px" bg="green.50"> {/* Soft green background */}
+        <ModalContent h="410px" bg="#E6E6FA">
           <ModalHeader
             fontSize="40px"
             fontFamily="Work sans"
-            display="flex"
+            d="flex"
             justifyContent="center"
-            bg="green.300" /* Light green header */
+            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
             color="white"
             borderRadius="md"
           >
@@ -45,31 +46,31 @@ const ProfileModal = ({ user, children }) => {
           </ModalHeader>
           <ModalCloseButton color="white" />
           <ModalBody
-            display="flex"
-            flexDirection="column"
+            d="flex"
+            flexDir="column"
             alignItems="center"
             justifyContent="space-between"
-            bg="green.50"
+            bg="#E6E6FA"
           >
-            <Image
-              borderRadius="full"
-              boxSize="150px"
+            <Avatar
+              size="2xl"
+              cursor="pointer"
+              name={user.name}
               src={user.pic}
-              alt={user.name}
-              border="2px solid"
-              borderColor="green.400" /* Green border for the avatar */
+              border="4px solid"
+              borderColor="purple.500"
             />
             <Text
               fontSize={{ base: "28px", md: "30px" }}
               fontFamily="Work sans"
-              color="green.700" /* Darker green for text */
+              color="purple.700"
               mt={4}
             >
               Email: {user.email}
             </Text>
           </ModalBody>
-          <ModalFooter bg="green.100"> {/* Subtle green footer */}
-            <Button onClick={onClose} colorScheme="green">
+          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
+            <Button onClick={onClose} bg="white" color="purple.700" _hover={{ bg: "purple.50" }}>
               Close
             </Button>
           </ModalFooter>

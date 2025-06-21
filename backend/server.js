@@ -8,6 +8,8 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const path = require("path");
 const colors = require("colors");
 const morgan = require("morgan");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 connectDB();
@@ -16,6 +18,13 @@ const app = express();
 
 app.use(express.json()); // Accept JSON data
 app.use(morgan("dev")); // Log requests
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 // Routes
 app.use("/api/user", userRoutes);

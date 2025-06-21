@@ -9,17 +9,33 @@ const Chatbox = ({ fetchAgain, setFetchAgain }) => {
   return (
     <Box
       display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
-      alignItems="center"
+      alignItems="stretch"
       alignSelf="stretch"
-      overflow="hidden"
-      flexDirection="column" // Ensure column layout on smaller screens
+      flexDirection="column"
       padding={3}
-      bg="linear-gradient(135deg, #4caf50, #81c784)" // Green gradient background
-      width="100%" // Ensures Chatbox takes full width within the container
+      bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+      width="100%"
+      height="100%"
       borderRadius="lg"
-      borderWidth="1px"
-      borderColor="#388e3c" // Dark green border
+      borderWidth="5px"
+      borderColor="#5A67D8"
       boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+      overflow="auto"
+      css={{
+        '&::-webkit-scrollbar': {
+          width: '0px !important',
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'transparent !important',
+        },
+        scrollbarWidth: 'none !important',
+        msOverflowStyle: 'none !important',
+        scrollBehavior: 'smooth',
+      }}
     >
       <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
     </Box>

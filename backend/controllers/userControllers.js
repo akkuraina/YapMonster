@@ -60,7 +60,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 //@description     Auth the user
-//@route           POST /api/users/login
+//@route           POST /api/user/login
 //@access          Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;

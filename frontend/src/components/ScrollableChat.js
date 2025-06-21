@@ -1,6 +1,6 @@
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
-import ScrollableFeed from "react-scrollable-feed";
+import { Box } from "@chakra-ui/layout";
 import {
   isLastMessage,
   isSameSender,
@@ -13,49 +13,94 @@ const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
 
   return (
-    <ScrollableFeed>
+    <Box
+      display="flex"
+      flexDirection="column"
+      gap="8px"
+      padding="10px"
+      height="100%"
+      flex="1"
+      overflowY="auto"
+      overflowX="hidden"
+      css={{
+        '&::-webkit-scrollbar': {
+          width: '0px !important',
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'transparent !important',
+        },
+        scrollbarWidth: 'none !important',
+        msOverflowStyle: 'none !important',
+        scrollBehavior: 'smooth',
+      }}
+    >
       {messages &&
         messages.map((m, i) => (
-          <div style={{ display: "flex" }} key={m._id}>
-            {(isSameSender(messages, m, i, user._id) ||
-              isLastMessage(messages, i, user._id)) && (
+          <Box
+            key={m._id}
+            display="flex"
+            alignItems="flex-start"
+            justifyContent={m.sender._id === user._id ? "flex-end" : "flex-start"}
+            width="100%"
+          >
+            {m.sender._id !== user._id && (
               <Tooltip
                 label={m.sender.name}
                 placement="bottom-start"
                 hasArrow
-                bg="green.600"
+                bg="purple.700"
                 color="white"
               >
                 <Avatar
                   mt="7px"
-                  mr={1}
+                  mr={2}
                   size="sm"
                   cursor="pointer"
                   name={m.sender.name}
                   src={m.sender.pic}
-                  bg="green.500"
+                  bg="purple.600"
                 />
               </Tooltip>
             )}
-            <span
-              style={{
-                backgroundColor: `${
-                  m.sender._id === user._id ? "#9AE6B4" : "#68D391"
-                }`,
-                marginLeft: isSameSenderMargin(messages, m, i, user._id),
-                marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
-                borderRadius: "20px",
-                padding: "5px 15px",
-                maxWidth: "75%",
-                color: "#1A202C",
-                fontSize: "14px",
-              }}
+            <Box
+              backgroundColor={m.sender._id === user._id ? "#5A67D8" : "#6B46C1"}
+              color="white"
+              padding="8px 16px"
+              borderRadius="18px"
+              maxWidth="70%"
+              fontSize="14px"
+              boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
+              wordBreak="break-word"
+              overflowWrap="break-word"
             >
               {m.content}
-            </span>
-          </div>
+            </Box>
+            {m.sender._id === user._id && (
+              <Tooltip
+                label={m.sender.name}
+                placement="bottom-end"
+                hasArrow
+                bg="purple.700"
+                color="white"
+              >
+                <Avatar
+                  mt="7px"
+                  ml={2}
+                  size="sm"
+                  cursor="pointer"
+                  name={m.sender.name}
+                  src={m.sender.pic}
+                  bg="purple.600"
+                />
+              </Tooltip>
+            )}
+          </Box>
         ))}
-    </ScrollableFeed>
+    </Box>
   );
 };
 

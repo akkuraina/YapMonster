@@ -136,7 +136,7 @@ const GroupChatModal = ({ children }) => {
             fontFamily="Work sans"
             display="flex"
             justifyContent="center"
-            bg="green.300" /* Light green background */
+            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
             color="white"
           >
             Create Group Chat
@@ -146,8 +146,25 @@ const GroupChatModal = ({ children }) => {
             display="flex"
             flexDirection="column"
             alignItems="center"
-            bg="green.50" /* Softer green for the body */
-            p={4} // Added padding for better spacing
+            bg="#E6E6FA"
+            p={4}
+            overflowY="auto"
+            maxH="60vh"
+            css={{
+              '&::-webkit-scrollbar': {
+                width: '0px !important',
+                background: 'transparent !important',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent !important',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'transparent !important',
+              },
+              scrollbarWidth: 'none !important',
+              msOverflowStyle: 'none !important',
+              scrollBehavior: 'smooth',
+            }}
           >
             <FormControl>
               <Input
@@ -155,7 +172,8 @@ const GroupChatModal = ({ children }) => {
                 mb={3}
                 onChange={(e) => setGroupChatName(e.target.value)}
                 bg="white"
-                focusBorderColor="green.400"
+                focusBorderColor="purple.500"
+                borderColor="purple.300"
               />
             </FormControl>
             <FormControl>
@@ -164,14 +182,15 @@ const GroupChatModal = ({ children }) => {
                 mb={1}
                 onChange={(e) => handleSearch(e.target.value)}
                 bg="white"
-                focusBorderColor="green.400"
+                focusBorderColor="purple.500"
+                borderColor="purple.300"
               />
             </FormControl>
             <Box
               w="100%"
               display="flex"
               flexWrap="wrap"
-              bg="green.100"
+              bg="purple.200"
               p={2}
               borderRadius="lg"
               mb={3}
@@ -198,8 +217,8 @@ const GroupChatModal = ({ children }) => {
                 ))
             )}
           </ModalBody>
-          <ModalFooter bg="green.300">
-            <Button onClick={handleSubmit} colorScheme="green">
+          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
+            <Button onClick={handleSubmit} bg="linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" color="white" _hover={{ bg: "linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)" }}>
               Create Chat
             </Button>
           </ModalFooter>

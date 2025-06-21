@@ -11,14 +11,13 @@ const UserBadgeItem = ({ user, handleFunction, admin }) => {
       mb={2}
       variant="solid"
       fontSize={14}
-      colorScheme="green" /* Updated to green theme */
+      colorScheme="purple" /* Updated to purple theme */
+      size="sm"
       cursor="pointer"
       onClick={handleFunction}
-      display="flex"
-      alignItems="center"
-      bg="green.500" /* Custom green background */
+      bg="purple.500" /* Custom purple background */
       color="white" /* White text for contrast */
-      _hover={{ bg: "green.600" }} /* Darker green on hover */
+      _hover={{ bg: "purple.600" }} /* Darker purple on hover */
     >
       <span>{user.name}</span>
       {admin === user._id && <span> (Admin)</span>}

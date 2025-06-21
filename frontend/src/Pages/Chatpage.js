@@ -10,47 +10,60 @@ const Chatpage = () => {
   const { user } = ChatState();
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <Box 
+      width="100vw" 
+      height="100vh" 
+      overflow="auto"
+      bg="#E6E6FA"
+      css={{
+        scrollBehavior: 'smooth',
+        '&::-webkit-scrollbar': {
+          width: '0px !important',
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent !important',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'transparent !important',
+        },
+        scrollbarWidth: 'none !important',
+        msOverflowStyle: 'none !important',
+      }}
+    >
       {user && <SideDrawer />}
       <Box
-        display="flex" // Flex container for horizontal alignment
+        display="flex"
         justifyContent="flex-start"
         alignItems="stretch"
         width="100%"
-        height="91.5vh"
+        height="calc(100vh - 120px)"
         padding="10px"
-        bg="#2d3748" // Dark background for ChatPage
-        borderRadius="lg"
-        overflow="hidden"
-        boxShadow="xl"
+        bg="transparent"
       >
         {/* MyChats section */}
         <Box
-          width={{ base: "100%", md: "30%" }} // Responsive width for MyChats
+          width={{ base: "100%", md: "30%" }}
           height="100%"
           padding="10px"
-          bg="#1a202c" // Dark background for MyChats section
-          borderRadius="lg"
-          boxShadow="md"
+          bg="transparent"
         >
           {user && <MyChats fetchAgain={fetchAgain} />}
         </Box>
 
         {/* Chatbox section */}
         <Box
-          width={{ base: "100%", md: "70%" }} // Responsive width for Chatbox
+          width={{ base: "100%", md: "70%" }}
           height="100%"
           padding="10px"
-          bg="#1a202c" // Dark background for Chatbox section
-          borderRadius="lg"
-          boxShadow="md"
+          bg="transparent"
         >
           {user && (
             <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
           )}
         </Box>
       </Box>
-    </div>
+    </Box>
   );
 };
 

@@ -214,12 +214,36 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
             fontFamily="Work sans"
             d="flex"
             justifyContent="center"
+            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+            color="white"
           >
             {selectedChat.chatName}
           </ModalHeader>
 
-          <ModalCloseButton />
-          <ModalBody d="flex" flexDir="column" alignItems="center">
+          <ModalCloseButton color="white" />
+          <ModalBody 
+            d="flex" 
+            flexDir="column" 
+            alignItems="center"
+            bg="#E6E6FA"
+            overflowY="auto"
+            maxH="60vh"
+            css={{
+              '&::-webkit-scrollbar': {
+                width: '0px !important',
+                background: 'transparent !important',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent !important',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'transparent !important',
+              },
+              scrollbarWidth: 'none !important',
+              msOverflowStyle: 'none !important',
+              scrollBehavior: 'smooth',
+            }}
+          >
             <Box w="100%" d="flex" flexWrap="wrap" pb={3}>
               {selectedChat.users.map((u) => (
                 <UserBadgeItem
@@ -236,13 +260,18 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
                 mb={3}
                 value={groupChatName}
                 onChange={(e) => setGroupChatName(e.target.value)}
+                bg="white"
+                focusBorderColor="purple.500"
+                borderColor="purple.300"
               />
               <Button
                 variant="solid"
-                colorScheme="teal"
+                bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                color="white"
                 ml={1}
                 isLoading={renameloading}
                 onClick={handleRename}
+                _hover={{ bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" }}
               >
                 Update
               </Button>
@@ -252,6 +281,9 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
                 placeholder="Add User to group"
                 mb={1}
                 onChange={(e) => handleSearch(e.target.value)}
+                bg="white"
+                focusBorderColor="purple.500"
+                borderColor="purple.300"
               />
             </FormControl>
 
