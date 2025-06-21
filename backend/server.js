@@ -10,6 +10,7 @@ const colors = require("colors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const cors = require("cors");
 
 dotenv.config();
 connectDB();
@@ -31,14 +32,14 @@ app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
-const cors = require("cors");
-
 app.use(cors({
-  origin:
-    process.env.NODE_ENV === "production"
-      ? "https://yourdomain.com" // Replace with your frontend's production URL
-      : "http://localhost:3000", // Frontend's development URL
-  credentials: true, // Allow cookies and authentication headers
+  origin: process.env.NODE_ENV === "production"
+    ? [
+        process.env.FRONTEND_URL || "https://your-frontend-domain.vercel.app", // Use environment variable
+        "http://localhost:3000"
+      ]
+    : "http://localhost:3000",
+  credentials: true,
 }));
 
 
@@ -70,10 +71,12 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://yourdomain.com"
-        : "http://localhost:3000",
+    origin: process.env.NODE_ENV === "production"
+      ? [
+          process.env.FRONTEND_URL || "https://your-frontend-domain.vercel.app", // Use environment variable
+          "http://localhost:3000"
+        ]
+      : "http://localhost:3000",
     credentials: true,
   },
 });
