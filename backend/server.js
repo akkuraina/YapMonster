@@ -34,22 +34,22 @@ app.use(rateLimit({
 }));
 
 // CORS middleware - MUST be before routes
-const corsOrigins = process.env.NODE_ENV === "production"
-  ? [
-      process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
-      "http://localhost:3000"
-    ]
-  : "http://localhost:3000";
+const allowedOrigin =
+  process.env.NODE_ENV === "production"
+    ? process.env.FRONTEND_URL
+    : "http://localhost:3000";
 
 console.log("=== CORS SETUP ===");
 console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("CORS Origins:", corsOrigins);
+console.log("CORS Allowed Origin:", allowedOrigin);
 console.log("==================");
 
-app.use(cors({
-  origin: corsOrigins,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: allowedOrigin,
+    credentials: true,
+  })
+);
 
 // Routes
 app.use("/api/user", userRoutes);
