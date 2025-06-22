@@ -6,6 +6,8 @@ import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
+import { ChatState } from "../../Context/ChatProvider";
+import config from "../../config/config";
 
 const Signup = () => {
   const [show, setShow] = useState(false);
@@ -19,6 +21,8 @@ const Signup = () => {
   const [password, setPassword] = useState();
   const [pic, setPic] = useState();
   const [picLoading, setPicLoading] = useState(false);
+
+  const { setUser } = ChatState();
 
   const submitHandler = async () => {
     setPicLoading(true);
@@ -44,20 +48,20 @@ const Signup = () => {
       return;
     }
     try {
-      const config = {
+      const config_headers = {
         headers: {
           "Content-type": "application/json",
         },
       };
       const { data } = await axios.post(
-        "/api/user",
+        `${config.BACKEND_URL}/api/user`,
         {
           name,
           email,
           password,
           pic,
         },
-        config
+        config_headers
       );
       toast({
         title: "Registration Successful",
@@ -72,7 +76,7 @@ const Signup = () => {
     } catch (error) {
       toast({
         title: "Error Occurred!",
-        description: error.response.data.message,
+        description: error.response?.data?.message || "Registration failed",
         status: "error",
         duration: 5000,
         isClosable: true,

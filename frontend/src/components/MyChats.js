@@ -16,6 +16,7 @@ import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
 import UserListItem from "./userAvatar/UserListItem";
 import { ChatState } from "../Context/ChatProvider";
+import config from "../config/config";
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
@@ -31,18 +32,18 @@ const MyChats = ({ fetchAgain }) => {
 
   const fetchChats = async () => {
     try {
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
 
-      const { data } = await axios.get("/api/chat", config);
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/chat`, config_headers);
       setChats(data);
     } catch (error) {
       toast({
-        title: "Error Occurred!",
-        description: "Failed to load the chats",
+        title: "Error Occured!",
+        description: "Failed to Load the chats",
         status: "error",
         duration: 5000,
         isClosable: true,

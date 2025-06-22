@@ -7,6 +7,7 @@ import axios from "axios";
 import { useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom"; 
 import { ChatState } from "../../Context/ChatProvider";
+import config from "../../config/config";
 
 const Login = () => {
   const [show, setShow] = useState(false);
@@ -34,16 +35,16 @@ const Login = () => {
     }
 
     try {
-      const config = {
+      const config_headers = {
         headers: {
           "Content-type": "application/json",
         },
       };
 
       const { data } = await axios.post(
-        "/api/user/login",
+        `${config.BACKEND_URL}/api/user/login`,
         { email, password },
-        config
+        config_headers
       );
 
       toast({
@@ -60,7 +61,7 @@ const Login = () => {
     } catch (error) {
       toast({
         title: "Error Occurred!",
-        description: error.response.data.message,
+        description: error.response?.data?.message || "Login failed",
         status: "error",
         duration: 5000,
         isClosable: true,
