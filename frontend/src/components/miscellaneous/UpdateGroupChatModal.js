@@ -21,6 +21,7 @@ import { useState } from "react";
 import { ChatState } from "../../Context/ChatProvider";
 import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
+import config from "../../config/config";
 
 const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -41,12 +42,12 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
 
     try {
       setLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user?search=${search}`, config_headers);
       console.log(data);
       setLoading(false);
       setSearchResult(data);
@@ -68,18 +69,18 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
 
     try {
       setRenameLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data } = await axios.put(
-        `/api/chat/rename`,
+        `${config.BACKEND_URL}/api/chat/rename`,
         {
           chatId: selectedChat._id,
           chatName: groupChatName,
         },
-        config
+        config_headers
       );
 
       console.log(data._id);
@@ -90,7 +91,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
     } catch (error) {
       toast({
         title: "Error Occured!",
-        description: error.response.data.message,
+        description: error.response?.data?.message || "Error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -126,18 +127,18 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
 
     try {
       setLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data } = await axios.put(
-        `/api/chat/groupadd`,
+        `${config.BACKEND_URL}/api/chat/groupadd`,
         {
           chatId: selectedChat._id,
           userId: user1._id,
         },
-        config
+        config_headers
       );
 
       setSelectedChat(data);
@@ -146,7 +147,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
     } catch (error) {
       toast({
         title: "Error Occured!",
-        description: error.response.data.message,
+        description: error.response?.data?.message || "Error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -171,18 +172,18 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
 
     try {
       setLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data } = await axios.put(
-        `/api/chat/groupremove`,
+        `${config.BACKEND_URL}/api/chat/groupremove`,
         {
           chatId: selectedChat._id,
           userId: user1._id,
         },
-        config
+        config_headers
       );
 
       user1._id === user._id ? setSelectedChat() : setSelectedChat(data);
@@ -192,7 +193,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
     } catch (error) {
       toast({
         title: "Error Occured!",
-        description: error.response.data.message,
+        description: error.response?.data?.message || "Error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -202,7 +203,8 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
     }
     setGroupChatName("");
   };
- return (
+
+  return (
     <>
       <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
 

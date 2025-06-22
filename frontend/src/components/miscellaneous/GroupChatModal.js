@@ -13,22 +13,23 @@ import {
   useToast,
   Box,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useState } from "react";
 import { ChatState } from "../../Context/ChatProvider";
 import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
+import axios from "axios";
+import config from "../../config/config";
 
 const GroupChatModal = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
+  const { user, chats, setChats } = ChatState();
+
   const [groupChatName, setGroupChatName] = useState();
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
-  const { user, chats, setChats } = ChatState();
 
   const handleGroup = (userToAdd) => {
     if (selectedUsers.includes(userToAdd)) {
@@ -53,12 +54,12 @@ const GroupChatModal = ({ children }) => {
 
     try {
       setLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user?search=${search}`, config_headers);
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
@@ -90,18 +91,18 @@ const GroupChatModal = ({ children }) => {
     }
 
     try {
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data } = await axios.post(
-        `/api/chat/group`,
+        `${config.BACKEND_URL}/api/chat/group`,
         {
           name: groupChatName,
           users: JSON.stringify(selectedUsers.map((u) => u._id)),
         },
-        config
+        config_headers
       );
       setChats([data, ...chats]);
       onClose();
@@ -115,7 +116,7 @@ const GroupChatModal = ({ children }) => {
     } catch (error) {
       toast({
         title: "Failed to Create the Chat!",
-        description: error.response.data,
+        description: error.response?.data || "Error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
