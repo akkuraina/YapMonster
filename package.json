@@ -12,7 +12,9 @@
     "client": "cd frontend && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "frontend": "cd frontend && npm start",
-    "backend": "cd backend && node server.js"
+    "backend": "cd backend && node server.js",
+    "build": "cd frontend && npm install && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.2.5",
