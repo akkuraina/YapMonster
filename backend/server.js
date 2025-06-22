@@ -15,6 +15,12 @@ const cors = require("cors");
 dotenv.config();
 connectDB();
 
+// Debug environment variables
+console.log("=== ENVIRONMENT VARIABLES ===");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+console.log("=============================");
+
 const app = express();
 
 app.use(express.json()); // Accept JSON data
@@ -28,13 +34,20 @@ app.use(rateLimit({
 }));
 
 // CORS middleware - MUST be before routes
+const corsOrigins = process.env.NODE_ENV === "production"
+  ? [
+      process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
+      "http://localhost:3000"
+    ]
+  : "http://localhost:3000";
+
+console.log("=== CORS SETUP ===");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("CORS Origins:", corsOrigins);
+console.log("==================");
+
 app.use(cors({
-  origin: process.env.NODE_ENV === "production"
-    ? [
-        process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
-        "http://localhost:3000"
-      ]
-    : "http://localhost:3000",
+  origin: corsOrigins,
   credentials: true,
 }));
 
