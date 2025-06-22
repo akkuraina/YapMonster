@@ -10,9 +10,6 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "REACT_APP_BACKEND_URL": "@react_app_backend_url"
-  },
   "functions": {
     "frontend/build/**/*.js": {
       "maxDuration": 10
