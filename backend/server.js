@@ -36,9 +36,9 @@ app.use(rateLimit({
 // CORS middleware - MUST be before routes
 app.use(
   cors({
-    path:'*'
-    }
-  )
+    origin: '*',
+    credentials: true
+  })
 );
 
 // Routes
@@ -66,12 +66,7 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.NODE_ENV === "production"
-      ? [
-          process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
-          "http://localhost:3000"
-        ]
-      : "http://localhost:3000",
+    origin: "*",
     credentials: true,
   },
 });
@@ -103,7 +98,7 @@ io.on("connection", (socket) => {
 
     newMessageRecieved.chat.users.forEach((user) => {
       if (user._id === newMessageRecieved.sender._id) return;
-      socket.in(user._id).emit("message recieved", newMessageRecieved);
+      socket.in(user._id).emit("message received", newMessageRecieved);
     });
   });
 
