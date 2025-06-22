@@ -36,14 +36,10 @@ app.use(rateLimit({
 // CORS middleware - MUST be before routes
 app.use(
   cors({
-    origin: "https://yap-monster-aag6bozxw-akkurainas-projects.vercel.app",
-    credentials: true,
-  })
+    path:'*'
+    }
+  )
 );
-
-console.log("=== CORS SETUP ===");
-console.log("CORS Allowed Origin: https://yap-monster-aag6bozxw-akkurainas-projects.vercel.app");
-console.log("==================");
 
 // Routes
 app.use("/api/user", userRoutes);
