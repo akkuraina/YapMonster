@@ -27,21 +27,21 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-// Routes
-app.use("/api/user", userRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/message", messageRoutes);
-
+// CORS middleware - MUST be before routes
 app.use(cors({
   origin: process.env.NODE_ENV === "production"
     ? [
-        process.env.FRONTEND_URL || "https://your-frontend-domain.vercel.app", // Use environment variable
+        process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
         "http://localhost:3000"
       ]
     : "http://localhost:3000",
   credentials: true,
 }));
 
+// Routes
+app.use("/api/user", userRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/message", messageRoutes);
 
 // Deployment setup
 const __dirname1 = path.resolve();
@@ -73,7 +73,7 @@ const io = require("socket.io")(server, {
   cors: {
     origin: process.env.NODE_ENV === "production"
       ? [
-          process.env.FRONTEND_URL || "https://your-frontend-domain.vercel.app", // Use environment variable
+          process.env.FRONTEND_URL || "https://yap-monster.vercel.app",
           "http://localhost:3000"
         ]
       : "http://localhost:3000",
