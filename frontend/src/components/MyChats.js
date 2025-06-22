@@ -293,8 +293,8 @@ const MyChats = ({ fetchAgain }) => {
                   color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
                 >
                   {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
-                    : chat.chatName}
+                    ? (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
+                    : (chat.chatName || "Unnamed Group")}
                 </Text>
                 {chat.latestMessage && (
                   <Text 
@@ -305,9 +305,9 @@ const MyChats = ({ fetchAgain }) => {
                     overflowWrap="break-word"
                   >
                     <Text as="span" fontWeight="600">
-                      {chat.latestMessage.sender.name}:
-                    </Text>{" "}
-                    {chat.latestMessage.content.length > 50
+                      {chat.latestMessage.sender?.name || "Unknown"}:{" "}
+                    </Text>
+                    {chat.latestMessage.content && chat.latestMessage.content.length > 50
                       ? chat.latestMessage.content.substring(0, 51) + "..."
                       : chat.latestMessage.content}
                   </Text>

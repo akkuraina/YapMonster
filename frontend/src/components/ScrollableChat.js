@@ -49,7 +49,7 @@ const ScrollableChat = ({ messages }) => {
           >
             {m.sender._id !== user._id && (
               <Tooltip
-                label={m.sender.name}
+                label={m.sender?.name || "Unknown User"}
                 placement="bottom-start"
                 hasArrow
                 bg="purple.700"
@@ -60,8 +60,8 @@ const ScrollableChat = ({ messages }) => {
                   mr={2}
                   size="sm"
                   cursor="pointer"
-                  name={m.sender.name}
-                  src={m.sender.pic}
+                  name={m.sender?.name || "Unknown"}
+                  src={m.sender?.pic}
                   bg="purple.600"
                 />
               </Tooltip>
@@ -77,11 +77,11 @@ const ScrollableChat = ({ messages }) => {
               wordBreak="break-word"
               overflowWrap="break-word"
             >
-              {m.content}
+              {m.content || "Empty message"}
             </Box>
             {m.sender._id === user._id && (
               <Tooltip
-                label={m.sender.name}
+                label={m.sender?.name || "Unknown User"}
                 placement="bottom-end"
                 hasArrow
                 bg="purple.700"
@@ -92,8 +92,8 @@ const ScrollableChat = ({ messages }) => {
                   ml={2}
                   size="sm"
                   cursor="pointer"
-                  name={m.sender.name}
-                  src={m.sender.pic}
+                  name={m.sender?.name || "Unknown"}
+                  src={m.sender?.pic}
                   bg="purple.600"
                 />
               </Tooltip>

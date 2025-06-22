@@ -72,6 +72,10 @@ function SideDrawer() {
     setChats,
   } = ChatState();
 
+  // Debug: Log notification count changes
+  console.log("SideDrawer - Notification count:", notification.length);
+  console.log("SideDrawer - Notifications:", notification);
+
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -156,6 +160,33 @@ function SideDrawer() {
                     : `New Message from ${getSender(user, notif.chat.users)}`}
                 </MenuItem>
               ))}
+              {/* Debug: Add test notification */}
+              <MenuDivider />
+              <MenuItem
+                onClick={() => {
+                  const testNotification = {
+                    _id: Date.now().toString(),
+                    content: "Test message",
+                    sender: { name: "Test User" },
+                    chat: { 
+                      _id: "test-chat-id",
+                      chatName: "Test Chat",
+                      isGroupChat: false,
+                      users: [{ name: "Test User" }]
+                    }
+                  };
+                  setNotification(prev => [testNotification, ...prev]);
+                }}
+                borderRadius="lg"
+                _hover={{
+                  bg: "blue.100",
+                  transform: "translateX(5px)",
+                  transition: "all 0.2s ease-in-out"
+                }}
+                transition="all 0.2s ease-in-out"
+              >
+                🧪 Add Test Notification
+              </MenuItem>
             </MenuList>
           </Menu>
 

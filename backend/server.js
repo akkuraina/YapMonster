@@ -72,14 +72,16 @@ const io = require("socket.io")(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("Connected to socket.io");
+  console.log("Socket connected:", socket.id);
 
   socket.on("setup", (userData) => {
     if (!userData || !userData._id) {
       console.error("Invalid user data provided for socket setup");
       return;
     }
-    socket.join(userData._id);
+    const userId = userData._id.toString();
+    console.log("User setup:", userId);
+    socket.join(userId);
     socket.emit("connected");
   });
 
@@ -88,21 +90,34 @@ io.on("connection", (socket) => {
     console.log("User Joined Room: " + room);
   });
 
-  socket.on("typing", (room) => socket.in(room).emit("typing"));
-  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+  socket.on("typing", (room) => {
+    console.log("Typing in room:", room);
+    socket.in(room).emit("typing");
+  });
+  
+  socket.on("stop typing", (room) => {
+    console.log("Stop typing in room:", room);
+    socket.in(room).emit("stop typing");
+  });
 
-  socket.on("new message", (newMessageRecieved) => {
-    if (!newMessageRecieved.chat || !newMessageRecieved.chat.users) {
+  socket.on("new message", (newMessageReceived) => {
+    console.log("New message received:", newMessageReceived);
+    if (!newMessageReceived.chat || !newMessageReceived.chat.users) {
       return console.error("chat.users not defined in new message event");
     }
 
-    newMessageRecieved.chat.users.forEach((user) => {
-      if (user._id === newMessageRecieved.sender._id) return;
-      socket.in(user._id).emit("message received", newMessageRecieved);
+    newMessageReceived.chat.users.forEach((user) => {
+      // Convert ObjectId to string for comparison
+      const userId = user._id.toString();
+      const senderId = newMessageReceived.sender._id.toString();
+      
+      if (userId === senderId) return;
+      console.log("Emitting message to user:", userId);
+      socket.in(userId).emit("message received", newMessageReceived);
     });
   });
 
   socket.on("disconnect", () => {
-    console.log("USER DISCONNECTED");
+    console.log("USER DISCONNECTED:", socket.id);
   });
 });

@@ -39,9 +39,27 @@ export const isSameUser = (messages, m, i) => {
 };
 
 export const getSender = (loggedUser, users) => {
-  return users[0]?._id === loggedUser?._id ? users[1].name : users[0].name;
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return "Unknown User";
+  }
+  
+  if (users.length === 1) {
+    return users[0]?.name || "Unknown User";
+  }
+  
+  return users[0]?._id === loggedUser?._id 
+    ? (users[1]?.name || "Unknown User") 
+    : (users[0]?.name || "Unknown User");
 };
 
 export const getSenderFull = (loggedUser, users) => {
-  return users[0]._id === loggedUser._id ? users[1] : users[0];
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return null;
+  }
+  
+  if (users.length === 1) {
+    return users[0] || null;
+  }
+  
+  return users[0]?._id === loggedUser?._id ? users[1] : users[0];
 };
