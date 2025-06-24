@@ -66,13 +66,13 @@ const MyChats = ({ fetchAgain }) => {
 
     try {
       setLoading(true);
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
 
-      const { data } = await axios.get(`${config.BACKEND_URL}/api/user?search=${search}`, config);
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user?search=${search}`, config_headers);
 
       setLoading(false);
       setSearchResult(data);
@@ -91,13 +91,13 @@ const MyChats = ({ fetchAgain }) => {
   const accessChat = async (userId) => {
     try {
       setLoadingChat(true);
-      const config = {
+      const config_headers = {
         headers: {
           "Content-type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.post(`${config.BACKEND_URL}/api/chat`, { userId }, config);
+      const { data } = await axios.post(`${config.BACKEND_URL}/api/chat`, { userId }, config_headers);
 
       if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
       setSelectedChat(data);
