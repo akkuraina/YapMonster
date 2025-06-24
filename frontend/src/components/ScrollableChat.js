@@ -1,6 +1,6 @@
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
-import { Box } from "@chakra-ui/layout";
+import { Box, Text } from "@chakra-ui/layout";
 import {
   isLastMessage,
   isSameSender,
@@ -8,6 +8,45 @@ import {
   isSameUser,
 } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
+
+// Helper function to format timestamp
+const formatTimestamp = (timestamp) => {
+  if (!timestamp) return "";
+  
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInHours = (now - date) / (1000 * 60 * 60);
+  
+  // If message is from today, show only time
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  }
+  
+  // If message is from yesterday, show "Yesterday" and time
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday ${date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    })}`;
+  }
+  
+  // If message is older, show date and time
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric' 
+  }) + ' ' + date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+};
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
@@ -67,17 +106,34 @@ const ScrollableChat = ({ messages }) => {
               </Tooltip>
             )}
             <Box
-              backgroundColor={m.sender._id === user._id ? "#5A67D8" : "#6B46C1"}
-              color="white"
-              padding="8px 16px"
-              borderRadius="18px"
+              display="flex"
+              flexDirection="column"
+              alignItems={m.sender._id === user._id ? "flex-end" : "flex-start"}
               maxWidth="70%"
-              fontSize="14px"
-              boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
-              wordBreak="break-word"
-              overflowWrap="break-word"
             >
-              {m.content || "Empty message"}
+              <Box
+                backgroundColor={m.sender._id === user._id ? "#5A67D8" : "#6B46C1"}
+                color="white"
+                padding="8px 16px"
+                borderRadius="18px"
+                fontSize="14px"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
+                wordBreak="break-word"
+                overflowWrap="break-word"
+                mb="2px"
+              >
+                {m.content || "Empty message"}
+              </Box>
+              <Text
+                fontSize="10px"
+                color="gray.500"
+                opacity="0.8"
+                mt="1px"
+                mb="2px"
+                fontStyle="italic"
+              >
+                {formatTimestamp(m.createdAt)}
+              </Text>
             </Box>
             {m.sender._id === user._id && (
               <Tooltip
