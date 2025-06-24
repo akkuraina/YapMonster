@@ -31,6 +31,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const toast = useToast();
   const socketRef = useRef();
   const selectedChatCompareRef = useRef();
+  const [chatBg, setChatBg] = useState({ type: "color", value: "#f8fafc" });
 
   const defaultOptions = {
     loop: true,
@@ -290,6 +291,24 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
+  // Fetch chat background on chat change or refresh
+  const fetchChatBg = async () => {
+    if (!selectedChat) return;
+    try {
+      const config_headers = { headers: { Authorization: `Bearer ${user.token}` } };
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user/chat-background/${selectedChat._id}`, config_headers);
+      if (data) setChatBg(data);
+      else setChatBg({ type: "color", value: "#f8fafc" });
+    } catch {
+      setChatBg({ type: "color", value: "#f8fafc" });
+    }
+  };
+
+  useEffect(() => {
+    fetchChatBg();
+    // eslint-disable-next-line
+  }, [selectedChat]);
+
   return (
     <>
       {selectedChat ? (
@@ -343,7 +362,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                       />
                       <Text>{selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}</Text>
                       <ProfileModal
-                        user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : null}
+                        user={user}
+                        chatId={selectedChat._id}
+                        onBackgroundChange={fetchChatBg}
                       />
                     </Flex>
                   ) : (
@@ -361,6 +382,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         fetchMessages={fetchMessages}
                         fetchAgain={fetchAgain}
                         setFetchAgain={setFetchAgain}
+                        onBackgroundChange={fetchChatBg}
                       />
                     </Flex>
                   ))}
@@ -373,7 +395,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             flexDir="column"
             justifyContent="space-between"
             p={6}
-            bg="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
+            bg={chatBg.type === "image" ? "transparent" : chatBg.value}
+            backgroundImage={chatBg.type === "image" ? `url(${chatBg.value})` : undefined}
+            backgroundSize={chatBg.type === "image" ? "cover" : undefined}
+            backgroundPosition={chatBg.type === "image" ? "center" : undefined}
             w="100%"
             h="100%"
             borderRadius="20px"

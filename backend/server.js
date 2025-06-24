@@ -36,7 +36,7 @@ app.use(rateLimit({
 // CORS middleware - MUST be before routes
 app.use(
   cors({
-    origin: '*',
+    origin: "*", // Allow all origins for local development
     credentials: true
   })
 );

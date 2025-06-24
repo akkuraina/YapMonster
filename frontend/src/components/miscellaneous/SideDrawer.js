@@ -17,6 +17,11 @@ import { useToast } from "@chakra-ui/toast";
 import { getSender } from "../../config/ChatLogics";
 import ProfileModal from "./ProfileModal";
 import { ChatState } from "../../Context/ChatProvider";
+import { Menu as ChakraMenu, MenuButton as ChakraMenuButton, MenuList as ChakraMenuList, MenuItem as ChakraMenuItem, IconButton } from "@chakra-ui/react";
+import { FiMoreVertical } from "react-icons/fi";
+import axios from "axios";
+import { Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton } from "@chakra-ui/react";
+import { HamburgerIcon } from "@chakra-ui/icons";
 
 // Custom Notification Badge Component
 const NotificationBadge = ({ count, children }) => {
@@ -65,6 +70,7 @@ const NotificationBadge = ({ count, children }) => {
 
 function SideDrawer() {
   const {
+    selectedChat,
     setSelectedChat,
     user,
     notification,
@@ -86,9 +92,11 @@ function SideDrawer() {
   };
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <>
+      {/* Top bar */}
       <Box
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         w="100%"
@@ -111,6 +119,17 @@ function SideDrawer() {
         }}
       >
         <Flex alignItems="center" justifyContent="space-between" h="100%">
+          {/* Hamburger icon to open drawer */}
+          <IconButton
+            icon={<HamburgerIcon />}
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            fontSize="2xl"
+            onClick={onOpen}
+            aria-label="Open menu"
+            mr={2}
+            _hover={{ bg: "purple.200" }}
+          />
           {/* Notification icon on the left */}
           <Menu>
             <MenuButton 
@@ -288,6 +307,153 @@ function SideDrawer() {
           </Flex>
         </Flex>
       </Box>
+      {/* Drawer for chats */}
+      <Drawer placement="left" onClose={onClose} isOpen={isOpen} size="xs">
+        <DrawerOverlay />
+        <DrawerContent bgGradient="linear(to-b, #5A67D8, #6B46C1)">
+          <DrawerCloseButton color="white" />
+          <DrawerHeader color="white" fontWeight="bold" fontSize="2xl" borderBottom="1px solid #6B46C1">
+            Chats
+          </DrawerHeader>
+          <DrawerBody p={0}>
+            <Box w="100%" h="100%" overflowY="auto" p={2}>
+              {chats.map((chat) => (
+                <Box
+                  onClick={() => { setSelectedChat(chat); onClose(); }}
+                  cursor="pointer"
+                  bg={selectedChat === chat ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.1)"}
+                  color="white"
+                  px={3}
+                  py={2}
+                  borderRadius="12px"
+                  key={chat._id}
+                  border="1px solid"
+                  borderColor={selectedChat === chat ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.2)"}
+                  _hover={{
+                    bg: "rgba(255, 255, 255, 0.2)",
+                    transform: "translateX(5px)",
+                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
+                    transition: "all 0.3s ease-in-out"
+                  }}
+                  transition="all 0.3s ease-in-out"
+                  position="relative"
+                  minH="60px"
+                  maxH="80px"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: selectedChat === chat 
+                      ? "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)"
+                      : "transparent",
+                    borderRadius: "12px",
+                    zIndex: -1
+                  }}
+                >
+                  <Flex alignItems="center" gap={2}>
+                    <Avatar
+                      size="sm"
+                      name={
+                        chat.isGroupChat 
+                          ? chat.chatName 
+                          : (chat.users && chat.users.length > 0 ? getSender(user, chat.users) : "Unknown User")
+                      }
+                      src={
+                        chat.isGroupChat 
+                          ? chat.groupPic 
+                          : (chat.users && chat.users.length > 0 ? getSender(user, chat.users)?.pic : "")
+                      }
+                      border="2px solid"
+                      borderColor="rgba(255, 255, 255, 0.3)"
+                      bg={chat.isGroupChat ? "purple.600" : "blue.600"}
+                      flexShrink="0"
+                    />
+                    <Box flex="1" minW="0" overflow="hidden">
+                      <Text
+                        fontWeight="600"
+                        fontSize="sm"
+                        mb={1}
+                        textShadow="0 1px 2px rgba(0, 0, 0, 0.3)"
+                        color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
+                        noOfLines={1}
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
+                        {!chat.isGroupChat
+                          ? (chat.users && chat.users.length > 0 ? getSender(user, chat.users) : "Unknown User")
+                          : (chat.chatName || "Unnamed Group")}
+                      </Text>
+                      {chat.latestMessage && (
+                        <Text 
+                          fontSize="xs" 
+                          opacity="0.8"
+                          lineHeight="1.3"
+                          noOfLines={1}
+                          overflow="hidden"
+                          textOverflow="ellipsis"
+                        >
+                          <Text as="span" fontWeight="600">
+                            {chat.latestMessage.sender?.name || "Unknown"}:{" "}
+                          </Text>
+                          {chat.latestMessage.content && chat.latestMessage.content.length > 30
+                            ? chat.latestMessage.content.substring(0, 31) + "..."
+                            : chat.latestMessage.content}
+                        </Text>
+                      )}
+                    </Box>
+                    {/* Three-dots menu for deleting chat */}
+                    <ChakraMenu placement="bottom-end">
+                      <ChakraMenuButton
+                        as={IconButton}
+                        aria-label="Chat options"
+                        icon={<FiMoreVertical />}
+                        size="xs"
+                        variant="ghost"
+                        ml={1}
+                        _hover={{ bg: "purple.100" }}
+                        _active={{ bg: "purple.200" }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                      <ChakraMenuList zIndex={2000} minW="140px">
+                        <ChakraMenuItem
+                          color="red.500"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm("Are you sure you want to delete this chat? This cannot be undone.")) {
+                              try {
+                                await axios.delete(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/api/chat/${chat._id}`, {
+                                  headers: { Authorization: `Bearer ${user.token}` }
+                                });
+                                setChats(prev => prev.filter(c => c._id !== chat._id));
+                                if (selectedChat && selectedChat._id === chat._id) setSelectedChat(null);
+                                toast({ title: "Chat deleted", status: "success", duration: 2000, isClosable: true, position: "bottom" });
+                              } catch (err) {
+                                if (err.response && err.response.status === 404) {
+                                  setChats(prev => prev.filter(c => c._id !== chat._id));
+                                  if (selectedChat && selectedChat._id === chat._id) setSelectedChat(null);
+                                  toast({ title: "Chat already deleted", status: "info", duration: 2000, isClosable: true, position: "bottom" });
+                                } else {
+                                  toast({ title: "Failed to delete chat", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          Delete Chat
+                        </ChakraMenuItem>
+                      </ChakraMenuList>
+                    </ChakraMenu>
+                  </Flex>
+                </Box>
+              ))}
+            </Box>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

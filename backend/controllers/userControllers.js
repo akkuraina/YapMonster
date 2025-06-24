@@ -115,4 +115,35 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { allUsers, registerUser, authUser, updateUserProfile };
+//@description     Get chat background for a chat
+//@route           GET /api/user/chat-background/:chatId
+//@access          Protected
+const getChatBackground = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  const chatId = req.params.chatId;
+  const bg = user.chatBackgrounds.find(bg => bg.chat.toString() === chatId);
+  res.json(bg || null);
+});
+
+//@description     Set chat background for a chat
+//@route           PUT /api/user/chat-background/:chatId
+//@access          Protected
+const setChatBackground = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  const chatId = req.params.chatId;
+  const { type, value } = req.body;
+  if (!type || !value) return res.status(400).json({ message: "Type and value are required" });
+  let bg = user.chatBackgrounds.find(bg => bg.chat.toString() === chatId);
+  if (bg) {
+    bg.type = type;
+    bg.value = value;
+  } else {
+    user.chatBackgrounds.push({ chat: chatId, type, value });
+  }
+  await user.save();
+  res.json({ message: "Background updated" });
+});
+
+module.exports = { allUsers, registerUser, authUser, updateUserProfile, getChatBackground, setChatBackground };

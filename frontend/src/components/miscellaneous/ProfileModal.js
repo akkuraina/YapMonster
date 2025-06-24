@@ -1,3 +1,4 @@
+import React from "react";
 import { ViewIcon, EditIcon } from "@chakra-ui/icons";
 import {
   Modal,
@@ -26,8 +27,9 @@ import { useState, useRef } from "react";
 import axios from "axios";
 import { ChatState } from "../../Context/ChatProvider";
 import config from "../../config/config";
+import { SketchPicker } from "react-color";
 
-const ProfileModal = ({ user, children }) => {
+const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
@@ -37,6 +39,13 @@ const ProfileModal = ({ user, children }) => {
   const toast = useToast();
   
   const { setUser } = ChatState();
+
+  // Chat background state (for personal chat context)
+  const [bgType, setBgType] = useState("color");
+  const [bgColor, setBgColor] = useState("#f8fafc");
+  const [bgImage, setBgImage] = useState("");
+  const [bgLoading, setBgLoading] = useState(false);
+  const [showBgPicker, setShowBgPicker] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -124,6 +133,70 @@ const ProfileModal = ({ user, children }) => {
     fileInputRef.current?.click();
   };
 
+  // Fetch current background for this chat (if chatId is provided)
+  const fetchBackground = async () => {
+    if (!chatId) return;
+    try {
+      setBgLoading(true);
+      const config_headers = { headers: { Authorization: `Bearer ${user.token}` } };
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, config_headers);
+      if (data) {
+        setBgType(data.type);
+        if (data.type === "color") setBgColor(data.value);
+        if (data.type === "image") setBgImage(data.value);
+      } else {
+        setBgType("color");
+        setBgColor("#f8fafc");
+        setBgImage("");
+      }
+      setBgLoading(false);
+    } catch {
+      setBgLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isOpen && chatId) fetchBackground();
+    // eslint-disable-next-line
+  }, [isOpen, chatId]);
+
+  const handleBgImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "File too large", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast({ title: "Invalid file type", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => setBgImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveBackground = async () => {
+    if (!chatId) return;
+    try {
+      setBgLoading(true);
+      const config_headers = { headers: { Authorization: `Bearer ${user.token}` } };
+      console.log("[ProfileModal] Using token for background update:", user.token);
+      const payload = bgType === "color"
+        ? { type: "color", value: bgColor }
+        : { type: "image", value: bgImage };
+      await axios.put(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, payload, config_headers);
+      setBgLoading(false);
+      toast({ title: "Background updated!", status: "success", duration: 2000, isClosable: true, position: "bottom" });
+      setShowBgPicker(false);
+      if (typeof onBackgroundChange === "function") onBackgroundChange();
+    } catch {
+      setBgLoading(false);
+      toast({ title: "Failed to update background", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+    }
+  };
+
   return (
     <>
       {children ? (
@@ -193,6 +266,71 @@ const ProfileModal = ({ user, children }) => {
                   style={{ display: "none" }}
                 />
               </Box>
+
+              {/* Chat Background Picker for Personal Chat */}
+              {!isEditing && chatId && (
+                <Box w="100%" mt={2} mb={2}>
+                  <Button
+                    size="sm"
+                    colorScheme="purple"
+                    variant="outline"
+                    onClick={() => setShowBgPicker((v) => !v)}
+                    mb={2}
+                  >
+                    Change Chat Background
+                  </Button>
+                  {showBgPicker && (
+                    <Box p={3} borderRadius="lg" bg="#f8fafc" boxShadow="md" mt={2}>
+                      <HStack mb={2}>
+                        <Button
+                          size="xs"
+                          colorScheme={bgType === "color" ? "purple" : "gray"}
+                          variant={bgType === "color" ? "solid" : "outline"}
+                          onClick={() => setBgType("color")}
+                        >
+                          Solid Color
+                        </Button>
+                        <Button
+                          size="xs"
+                          colorScheme={bgType === "image" ? "purple" : "gray"}
+                          variant={bgType === "image" ? "solid" : "outline"}
+                          onClick={() => setBgType("image")}
+                        >
+                          Image
+                        </Button>
+                      </HStack>
+                      {bgType === "color" && (
+                        <Box>
+                          <SketchPicker
+                            color={bgColor}
+                            onChangeComplete={(color) => setBgColor(color.hex)}
+                            disableAlpha
+                          />
+                          <Box mt={2} w="100%" h="40px" borderRadius="md" bg={bgColor} border="1px solid #ccc" />
+                        </Box>
+                      )}
+                      {bgType === "image" && (
+                        <Box>
+                          <Input type="file" accept="image/*" onChange={handleBgImageUpload} mb={2} />
+                          {bgImage && (
+                            <Box mt={2} w="100%" h="80px" borderRadius="md" bg="#eee" backgroundImage={`url(${bgImage})`} backgroundSize="cover" backgroundPosition="center" />
+                          )}
+                        </Box>
+                      )}
+                      <Button
+                        size="sm"
+                        colorScheme="purple"
+                        mt={3}
+                        isLoading={bgLoading}
+                        onClick={handleSaveBackground}
+                        w="100%"
+                      >
+                        Save Background
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              )}
 
               {/* Profile Information */}
               <VStack spacing={4} w="100%">

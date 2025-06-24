@@ -17,6 +17,13 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    chatBackgrounds: [
+      {
+        chat: { type: mongoose.Schema.Types.ObjectId, ref: "Chat" },
+        type: { type: String, enum: ["color", "image"], required: true },
+        value: { type: String, required: true }, // color hex or image URL/base64
+      },
+    ],
   },
   { timestamps: true }
 );

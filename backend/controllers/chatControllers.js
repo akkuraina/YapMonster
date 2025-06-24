@@ -222,6 +222,36 @@ const updateGroupPic = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Delete Chat
+// @route   DELETE /api/chat/:chatId
+// @access  Protected
+const deleteChat = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.user._id;
+  const chat = await Chat.findById(chatId);
+  if (!chat) {
+    return res.status(404).json({ message: "Chat not found" });
+  }
+  if (chat.isGroupChat) {
+    // Only admin can delete group chat
+    if (!chat.groupAdmin || chat.groupAdmin.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Only group admin can delete this chat" });
+    }
+    await Chat.findByIdAndDelete(chatId);
+    return res.json({ message: "Group chat deleted" });
+  } else {
+    // For personal chat, remove user from users array
+    chat.users = chat.users.filter(u => u.toString() !== userId.toString());
+    if (chat.users.length === 0) {
+      await Chat.findByIdAndDelete(chatId);
+      return res.json({ message: "Chat deleted" });
+    } else {
+      await chat.save();
+      return res.json({ message: "Chat removed for you" });
+    }
+  }
+});
+
 module.exports = {
   accessChat,
   fetchChats,
@@ -230,4 +260,5 @@ module.exports = {
   addToGroup,
   removeFromGroup,
   updateGroupPic,
+  deleteChat,
 };
