@@ -1,5 +1,6 @@
 import { Button } from "@chakra-ui/button";
 import { useDisclosure } from "@chakra-ui/hooks";
+import { useState } from "react";
 import { Box, Text, Flex, Badge } from "@chakra-ui/layout";
 import {
   Menu,
@@ -83,6 +84,8 @@ function SideDrawer() {
     localStorage.removeItem("userInfo");
     navigate("/");
   };
+
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
     <>
@@ -212,70 +215,76 @@ function SideDrawer() {
 
           {/* Profile and logout section on the right */}
           <Flex alignItems="center">
-            <Menu>
-              <MenuButton 
-                as={Button} 
-                bg="rgba(255, 255, 255, 0.2)"
-                backdropFilter="blur(10px)"
-                border="2px solid rgba(255, 255, 255, 0.3)"
-                size="lg" 
-                rightIcon={<ChevronDownIcon color="white" />}
+            {/* New Profile Popover */}
+            <Box position="relative">
+              <Box
+                as="button"
+                border="none"
+                bg="transparent"
+                p={0}
+                m={0}
                 borderRadius="full"
-                px={4}
-                _hover={{
-                  bg: "rgba(255, 255, 255, 0.3)",
-                  transform: "scale(1.05)",
-                  transition: "all 0.2s ease-in-out"
-                }}
-                transition="all 0.2s ease-in-out"
+                cursor="pointer"
+                _hover={{ transform: "scale(1.15)", boxShadow: "0 4px 16px rgba(90, 103, 216, 0.25)" }}
+                transition="all 0.2s cubic-bezier(.4,2,.6,1)"
+                onClick={() => setShowProfileMenu((v) => !v)}
+                aria-label="Open profile menu"
+                id="profile-avatar-btn"
               >
                 <Avatar
-                  size="md"
-                  cursor="pointer"
+                  size="lg"
                   name={user.name}
                   src={user.pic}
-                  border="3px solid white"
+                  border="2px solid white"
                   boxShadow="0 4px 12px rgba(0, 0, 0, 0.2)"
                   objectFit="cover"
                   borderRadius="full"
+                  pointerEvents="none"
                 />
-              </MenuButton>
-              <MenuList 
-                bg="white" 
-                borderRadius="xl"
-                boxShadow="0 20px 40px rgba(0, 0, 0, 0.15)"
-                border="none"
-                p={2}
-              >
-                <ProfileModal user={user}>
-                  <MenuItem 
-                    borderRadius="lg"
-                    mb={1}
-                    _hover={{
-                      bg: "purple.100",
-                      transform: "translateX(5px)",
-                      transition: "all 0.2s ease-in-out"
-                    }}
-                    transition="all 0.2s ease-in-out"
-                  >
-                    My Profile
-                  </MenuItem>
-                </ProfileModal>
-                <MenuDivider />
-                <MenuItem 
-                  onClick={logoutHandler}
-                  borderRadius="lg"
-                  _hover={{
-                    bg: "red.50",
-                    transform: "translateX(5px)",
-                    transition: "all 0.2s ease-in-out"
-                  }}
-                  transition="all 0.2s ease-in-out"
+              </Box>
+              {/* Popover menu */}
+              {showProfileMenu && (
+                <Box
+                  position="absolute"
+                  top="calc(100% + 10px)"
+                  right={0}
+                  bg="white"
+                  borderRadius="xl"
+                  boxShadow="0 8px 32px rgba(90, 103, 216, 0.18)"
+                  minW="160px"
+                  zIndex={100}
+                  p={2}
+                  onMouseLeave={() => setShowProfileMenu(false)}
                 >
-                  Logout
-                </MenuItem>
-              </MenuList>
-            </Menu>
+                  <ProfileModal user={user}>
+                    <Button
+                      w="100%"
+                      justifyContent="flex-start"
+                      variant="ghost"
+                      borderRadius="md"
+                      fontWeight="600"
+                      color="purple.700"
+                      _hover={{ bg: "purple.50" }}
+                      mb={1}
+                    >
+                      My Profile
+                    </Button>
+                  </ProfileModal>
+                  <Button
+                    w="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    borderRadius="md"
+                    fontWeight="600"
+                    color="red.500"
+                    _hover={{ bg: "red.50" }}
+                    onClick={logoutHandler}
+                  >
+                    Logout
+                  </Button>
+                </Box>
+              )}
+            </Box>
           </Flex>
         </Flex>
       </Box>
