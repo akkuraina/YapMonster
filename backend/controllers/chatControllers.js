@@ -96,6 +96,7 @@ const createGroupChat = asyncHandler(async (req, res) => {
       users: users,
       isGroupChat: true,
       groupAdmin: req.user,
+      groupPic: req.body.groupPic || "",
     });
 
     const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
@@ -176,6 +177,51 @@ const addToGroup = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Update Group Profile Picture
+// @route   PUT /api/chat/groupPic
+// @access  Protected
+const updateGroupPic = asyncHandler(async (req, res) => {
+  console.log("updateGroupPic called with body:", req.body);
+  const { chatId, groupPic } = req.body;
+
+  if (!chatId) {
+    console.log("Error: chatId is missing");
+    res.status(400);
+    throw new Error("Chat ID is required");
+  }
+
+  if (!groupPic) {
+    console.log("Error: groupPic is missing");
+    res.status(400);
+    throw new Error("Group picture is required");
+  }
+
+  console.log("Updating chat:", chatId, "with groupPic length:", groupPic.length);
+
+  try {
+    const updatedChat = await Chat.findByIdAndUpdate(
+      chatId,
+      { groupPic: groupPic },
+      { new: true }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!updatedChat) {
+      console.log("Error: Chat not found with ID:", chatId);
+      res.status(404);
+      throw new Error("Chat Not Found");
+    } else {
+      console.log("Successfully updated group picture for chat:", chatId);
+      return res.json(updatedChat); // Return after sending response
+    }
+  } catch (error) {
+    console.log("Database error:", error.message);
+    res.status(500);
+    throw new Error("Failed to update group picture: " + error.message);
+  }
+});
+
 module.exports = {
   accessChat,
   fetchChats,
@@ -183,4 +229,5 @@ module.exports = {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  updateGroupPic,
 };

@@ -1,6 +1,7 @@
 import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
 import { Box, Text, Flex, VStack } from "@chakra-ui/layout";
+import { Avatar } from "@chakra-ui/avatar";
 import "./styles.css";
 import { IconButton, Spinner, useToast, Icon } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
@@ -332,6 +333,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 {messages &&
                   (!selectedChat.isGroupChat ? (
                     <Flex alignItems="center" justifyContent="center" gap={3}>
+                      <Avatar
+                        size="md"
+                        name={selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}
+                        src={selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users)?.pic : ""}
+                        border="2px solid"
+                        borderColor="rgba(255, 255, 255, 0.3)"
+                        bg="blue.600"
+                      />
                       <Text>{selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}</Text>
                       <ProfileModal
                         user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : null}
@@ -339,6 +348,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     </Flex>
                   ) : (
                     <Flex alignItems="center" justifyContent="center" gap={3}>
+                      <Avatar
+                        size="md"
+                        name={selectedChat.chatName || "Group"}
+                        src={selectedChat.groupPic}
+                        border="2px solid"
+                        borderColor="rgba(255, 255, 255, 0.3)"
+                        bg="purple.600"
+                      />
                       <Text>{selectedChat.chatName?.toUpperCase() || "UNNAMED GROUP"}</Text>
                       <UpdateGroupChatModal
                         fetchMessages={fetchMessages}

@@ -1,4 +1,4 @@
-import { ViewIcon } from "@chakra-ui/icons";
+import { ViewIcon, EditIcon } from "@chakra-ui/icons";
 import {
   Modal,
   ModalOverlay,
@@ -10,14 +10,19 @@ import {
   Button,
   useDisclosure,
   FormControl,
+  FormLabel,
   Input,
   useToast,
   Box,
   IconButton,
   Spinner,
+  Avatar,
+  VStack,
+  HStack,
+  Text,
 } from "@chakra-ui/react";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChatState } from "../../Context/ChatProvider";
 import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
@@ -30,6 +35,9 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [renameloading, setRenameLoading] = useState(false);
+  const [groupPic, setGroupPic] = useState("");
+  const [picLoading, setPicLoading] = useState(false);
+  const fileInputRef = useRef();
   const toast = useToast();
 
   const { selectedChat, setSelectedChat, user } = ChatState();
@@ -84,7 +92,6 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
       );
 
       console.log(data._id);
-      // setSelectedChat("");
       setSelectedChat(data);
       setFetchAgain(!fetchAgain);
       setRenameLoading(false);
@@ -100,6 +107,151 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
       setRenameLoading(false);
     }
     setGroupChatName("");
+  };
+
+  const handleUpdateGroupPic = async () => {
+    if (!groupPic) {
+      toast({
+        title: "Error",
+        description: "Please select an image first",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
+      return;
+    }
+
+    console.log("Updating group picture for chat:", selectedChat._id);
+    console.log("Group picture length:", groupPic.length);
+    console.log("Group picture preview:", groupPic.substring(0, 50) + "...");
+
+    try {
+      setPicLoading(true);
+      const config_headers = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      
+      const requestData = {
+        chatId: selectedChat._id,
+        groupPic: groupPic,
+      };
+      
+      console.log("Sending request to:", `${config.BACKEND_URL}/api/chat/update-picture`);
+      console.log("Request data:", requestData);
+      
+      const { data } = await axios.put(
+        `${config.BACKEND_URL}/api/chat/update-picture`,
+        requestData,
+        config_headers
+      );
+
+      console.log("Response received:", data);
+      setSelectedChat(data);
+      setFetchAgain(!fetchAgain);
+      setPicLoading(false);
+      setGroupPic("");
+      
+      toast({
+        title: "Success",
+        description: "Group picture updated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
+    } catch (error) {
+      console.error("Error updating group picture:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to update group picture",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
+      setPicLoading(false);
+    }
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "bottom",
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "bottom",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // Compress the image if it's too large
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions (max 300x300)
+          let { width, height } = img;
+          const maxSize = 300;
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          console.log("Original size:", e.target.result.length);
+          console.log("Compressed size:", compressedDataUrl.length);
+          
+          setGroupPic(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleAddUser = async (user1) => {
@@ -208,7 +360,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
     <>
       <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
 
-      <Modal onClose={onClose} isOpen={isOpen} isCentered>
+      <Modal onClose={onClose} isOpen={isOpen} isCentered size="lg">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader
@@ -229,7 +381,8 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
             alignItems="center"
             bg="#E6E6FA"
             overflowY="auto"
-            maxH="60vh"
+            maxH="70vh"
+            p={6}
             css={{
               '&::-webkit-scrollbar': {
                 width: '0px !important',
@@ -246,62 +399,128 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
               scrollBehavior: 'smooth',
             }}
           >
-            <Box w="100%" d="flex" flexWrap="wrap" pb={3}>
-              {selectedChat.users.map((u) => (
-                <UserBadgeItem
-                  key={u._id}
-                  user={u}
-                  admin={selectedChat.groupAdmin}
-                  handleFunction={() => handleRemove(u)}
+            <VStack spacing={6} w="100%">
+              {/* Group Profile Picture Section */}
+              <Box position="relative">
+                <Avatar
+                  size="xl"
+                  cursor="pointer"
+                  name={selectedChat.chatName}
+                  src={groupPic || selectedChat.groupPic}
+                  border="4px solid"
+                  borderColor="purple.500"
+                  onClick={triggerFileInput}
+                  _hover={{ opacity: 0.8 }}
+                  bg={groupPic || selectedChat.groupPic ? "transparent" : "purple.600"}
                 />
-              ))}
-            </Box>
-            <FormControl d="flex">
-              <Input
-                placeholder="Chat Name"
-                mb={3}
-                value={groupChatName}
-                onChange={(e) => setGroupChatName(e.target.value)}
-                bg="white"
-                focusBorderColor="purple.500"
-                borderColor="purple.300"
-              />
-              <Button
-                variant="solid"
-                bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-                color="white"
-                ml={1}
-                isLoading={renameloading}
-                onClick={handleRename}
-                _hover={{ bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" }}
-              >
-                Update
-              </Button>
-            </FormControl>
-            <FormControl>
-              <Input
-                placeholder="Add User to group"
-                mb={1}
-                onChange={(e) => handleSearch(e.target.value)}
-                bg="white"
-                focusBorderColor="purple.500"
-                borderColor="purple.300"
-              />
-            </FormControl>
+                <IconButton
+                  icon={<EditIcon />}
+                  size="sm"
+                  colorScheme="purple"
+                  position="absolute"
+                  bottom="0"
+                  right="0"
+                  borderRadius="full"
+                  onClick={triggerFileInput}
+                  aria-label="Upload group picture"
+                />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
+              </Box>
 
-            {loading ? (
-              <Spinner size="lg" />
-            ) : (
-              searchResult?.map((user) => (
-                <UserListItem
-                  key={user._id}
-                  user={user}
-                  handleFunction={() => handleAddUser(user)}
+              {/* Update Group Picture Button */}
+              {groupPic && (
+                <Button
+                  onClick={handleUpdateGroupPic}
+                  isLoading={picLoading}
+                  loadingText="Updating..."
+                  bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                  color="white"
+                  _hover={{ bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" }}
+                >
+                  Update Group Picture
+                </Button>
+              )}
+
+              {/* Group Members */}
+              <Box w="100%">
+                <Text color="purple.700" fontWeight="600" mb={3}>
+                  Group Members
+                </Text>
+                <Box d="flex" flexWrap="wrap" pb={3}>
+                  {selectedChat.users.map((u) => (
+                    <UserBadgeItem
+                      key={u._id}
+                      user={u}
+                      admin={selectedChat.groupAdmin}
+                      handleFunction={() => handleRemove(u)}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Rename Group */}
+              <FormControl>
+                <FormLabel color="purple.700" fontWeight="600">
+                  Rename Group
+                </FormLabel>
+                <HStack>
+                  <Input
+                    placeholder="New group name"
+                    value={groupChatName || ""}
+                    onChange={(e) => setGroupChatName(e.target.value)}
+                    bg="white"
+                    focusBorderColor="purple.500"
+                    borderColor="purple.300"
+                  />
+                  <Button
+                    variant="solid"
+                    bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                    color="white"
+                    isLoading={renameloading}
+                    onClick={handleRename}
+                    _hover={{ bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" }}
+                  >
+                    Update
+                  </Button>
+                </HStack>
+              </FormControl>
+
+              {/* Add User */}
+              <FormControl>
+                <FormLabel color="purple.700" fontWeight="600">
+                  Add Member
+                </FormLabel>
+                <Input
+                  placeholder="Search users to add"
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  bg="white"
+                  focusBorderColor="purple.500"
+                  borderColor="purple.300"
                 />
-              ))
-            )}
+              </FormControl>
+
+              {/* Search Results */}
+              {loading ? (
+                <Spinner size="lg" />
+              ) : (
+                searchResult?.map((user) => (
+                  <UserListItem
+                    key={user._id}
+                    user={user}
+                    handleFunction={() => handleAddUser(user)}
+                  />
+                ))
+              )}
+            </VStack>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
             <Button onClick={() => handleRemove(user)} colorScheme="red">
               Leave Group
             </Button>

@@ -1,5 +1,5 @@
 import { AddIcon } from "@chakra-ui/icons";
-import { Box, Stack, Text, Button, useToast, useDisclosure, Flex, Input, Spinner } from "@chakra-ui/react";
+import { Box, Stack, Text, Button, useToast, useDisclosure, Flex, Input, Spinner, Avatar } from "@chakra-ui/react";
 import {
   Modal,
   ModalOverlay,
@@ -254,8 +254,8 @@ const MyChats = ({ fetchAgain }) => {
                 cursor="pointer"
                 bg={selectedChat === chat ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.1)"}
                 color="white"
-                px={4}
-                py={3}
+                px={3}
+                py={2}
                 borderRadius="12px"
                 key={chat._id}
                 border="1px solid"
@@ -269,6 +269,8 @@ const MyChats = ({ fetchAgain }) => {
                 transition="all 0.3s ease-in-out"
                 position="relative"
                 minH="60px"
+                maxH="80px"
+                overflow="hidden"
                 _before={{
                   content: '""',
                   position: "absolute",
@@ -283,35 +285,58 @@ const MyChats = ({ fetchAgain }) => {
                   zIndex: -1
                 }}
               >
-                <Text
-                  fontWeight="600"
-                  fontSize="md"
-                  mb={1}
-                  textShadow="0 1px 2px rgba(0, 0, 0, 0.3)"
-                  wordBreak="break-word"
-                  overflowWrap="break-word"
-                  color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
-                >
-                  {!chat.isGroupChat
-                    ? (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
-                    : (chat.chatName || "Unnamed Group")}
-                </Text>
-                {chat.latestMessage && (
-                  <Text 
-                    fontSize="sm" 
-                    opacity="0.8"
-                    lineHeight="1.4"
-                    wordBreak="break-word"
-                    overflowWrap="break-word"
-                  >
-                    <Text as="span" fontWeight="600">
-                      {chat.latestMessage.sender?.name || "Unknown"}:{" "}
+                <Flex alignItems="center" gap={2}>
+                  <Avatar
+                    size="sm"
+                    name={
+                      chat.isGroupChat 
+                        ? chat.chatName 
+                        : (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
+                    }
+                    src={
+                      chat.isGroupChat 
+                        ? chat.groupPic 
+                        : (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users)?.pic : "")
+                    }
+                    border="2px solid"
+                    borderColor="rgba(255, 255, 255, 0.3)"
+                    bg={chat.isGroupChat ? "purple.600" : "blue.600"}
+                    flexShrink="0"
+                  />
+                  <Box flex="1" minW="0" overflow="hidden">
+                    <Text
+                      fontWeight="600"
+                      fontSize="sm"
+                      mb={1}
+                      textShadow="0 1px 2px rgba(0, 0, 0, 0.3)"
+                      color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
+                      noOfLines={1}
+                      overflow="hidden"
+                      textOverflow="ellipsis"
+                    >
+                      {!chat.isGroupChat
+                        ? (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
+                        : (chat.chatName || "Unnamed Group")}
                     </Text>
-                    {chat.latestMessage.content && chat.latestMessage.content.length > 50
-                      ? chat.latestMessage.content.substring(0, 51) + "..."
-                      : chat.latestMessage.content}
-                  </Text>
-                )}
+                    {chat.latestMessage && (
+                      <Text 
+                        fontSize="xs" 
+                        opacity="0.8"
+                        lineHeight="1.3"
+                        noOfLines={1}
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
+                        <Text as="span" fontWeight="600">
+                          {chat.latestMessage.sender?.name || "Unknown"}:{" "}
+                        </Text>
+                        {chat.latestMessage.content && chat.latestMessage.content.length > 30
+                          ? chat.latestMessage.content.substring(0, 31) + "..."
+                          : chat.latestMessage.content}
+                      </Text>
+                    )}
+                  </Box>
+                </Flex>
               </Box>
             ))}
           </Stack>
