@@ -313,12 +313,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <>
+          {/* Fixed Chat Header */}
           <Box
             bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
             p={4}
             borderRadius="0 0 20px 20px"
             boxShadow="0 4px 20px rgba(0, 0, 0, 0.1)"
-            mb={4}
+            mb={0}
+            position="sticky"
+            top={0}
+            zIndex={10}
           >
             <Flex
               alignItems="center"
@@ -389,7 +393,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </Box>
             </Flex>
           </Box>
-          
+          {/* Chat Body */}
           <Box
             display="flex"
             flexDir="column"
@@ -400,10 +404,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             backgroundSize={chatBg.type === "image" ? "cover" : undefined}
             backgroundPosition={chatBg.type === "image" ? "center" : undefined}
             w="100%"
-            h="100%"
+            h="calc(100% - 88px)" // 88px = header height (p=4 + font + padding)
             borderRadius="20px"
             boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
             border="1px solid rgba(102, 126, 234, 0.1)"
+            mt={0}
           >
             {loading ? (
               <Flex justify="center" align="center" h="100%">

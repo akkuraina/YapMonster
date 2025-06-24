@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
 import { Box, Text } from "@chakra-ui/layout";
@@ -56,11 +56,19 @@ const formatTimestamp = (timestamp) => {
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
   const [localMessages, setLocalMessages] = useState(messages);
+  const chatContainerRef = useRef(null);
 
   // Update localMessages if messages prop changes
   React.useEffect(() => {
     setLocalMessages(messages);
   }, [messages]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [localMessages]);
 
   const handleDeleteForMe = async (messageId) => {
     try {
@@ -93,6 +101,7 @@ const ScrollableChat = ({ messages }) => {
 
   return (
     <Box
+      ref={chatContainerRef}
       display="flex"
       flexDirection="column"
       gap="8px"
