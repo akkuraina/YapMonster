@@ -65,4 +65,45 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { allMessages, sendMessage };
+//@description     Delete Message for Everyone
+//@route           DELETE /api/message/:messageId
+//@access          Protected (sender or admin)
+const deleteMessageForEveryone = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.user._id;
+
+  const message = await Message.findById(messageId).populate("sender");
+  if (!message) {
+    return res.status(404).json({ message: "Message not found" });
+  }
+
+  // Only sender or admin can delete for everyone
+  if (message.sender._id.toString() !== userId.toString() && !req.user.isAdmin) {
+    return res.status(403).json({ message: "Not authorized to delete this message for everyone" });
+  }
+
+  message.deletedForEveryone = true;
+  await message.save();
+  res.json({ message: "Message deleted for everyone" });
+});
+
+//@description     Delete Message for Me
+//@route           PUT /api/message/delete-for-me
+//@access          Protected
+const deleteMessageForMe = asyncHandler(async (req, res) => {
+  const { messageId } = req.body;
+  const userId = req.user._id;
+
+  const message = await Message.findById(messageId);
+  if (!message) {
+    return res.status(404).json({ message: "Message not found" });
+  }
+
+  if (!message.deletedFor.includes(userId)) {
+    message.deletedFor.push(userId);
+    await message.save();
+  }
+  res.json({ message: "Message deleted for you" });
+});
+
+module.exports = { allMessages, sendMessage, deleteMessageForEveryone, deleteMessageForMe };
