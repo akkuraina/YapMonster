@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/modal";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { getSender } from "../config/ChatLogics";
+import { getSender, getSenderFull } from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
 import UserListItem from "./userAvatar/UserListItem";
@@ -291,12 +291,12 @@ const MyChats = ({ fetchAgain }) => {
                     name={
                       chat.isGroupChat 
                         ? chat.chatName 
-                        : (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
+                        : (chat.users && chat.users.length > 0 ? getSenderFull(loggedUser, chat.users)?.name || "Unknown User" : "Unknown User")
                     }
                     src={
                       chat.isGroupChat 
                         ? chat.groupPic 
-                        : (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users)?.pic : "")
+                        : (chat.users && chat.users.length > 0 ? getSenderFull(loggedUser, chat.users)?.pic || "" : "")
                     }
                     border="2px solid"
                     borderColor="rgba(255, 255, 255, 0.3)"

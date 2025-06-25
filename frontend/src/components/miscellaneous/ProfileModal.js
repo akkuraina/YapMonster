@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ViewIcon, EditIcon } from "@chakra-ui/icons";
 import {
   Modal,
@@ -23,7 +23,6 @@ import {
   Box,
   Flex,
 } from "@chakra-ui/react";
-import { useState, useRef } from "react";
 import axios from "axios";
 import { ChatState } from "../../Context/ChatProvider";
 import config from "../../config/config";
@@ -38,14 +37,49 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
   const fileInputRef = useRef();
   const toast = useToast();
   
-  const { setUser } = ChatState();
+  const { setUser, user: currentUser } = ChatState();
+
+  // Check if this is the current user's profile or another user's profile
+  const isOwnProfile = user?._id === currentUser?._id;
 
   // Chat background state (for personal chat context)
   const [bgType, setBgType] = useState("color");
   const [bgColor, setBgColor] = useState("#f8fafc");
-  const [bgImage, setBgImage] = useState("");
   const [bgLoading, setBgLoading] = useState(false);
   const [showBgPicker, setShowBgPicker] = useState(false);
+
+  // Fetch current background for this chat (if chatId is provided)
+  const fetchBackground = async () => {
+    if (!chatId || !currentUser?.token) return;
+    try {
+      setBgLoading(true);
+      const config_headers = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+      const { data } = await axios.get(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, config_headers);
+      if (data) {
+        setBgType(data.type);
+        if (data.type === "color") setBgColor(data.value);
+      } else {
+        setBgType("color");
+        setBgColor("#f8fafc");
+      }
+      setBgLoading(false);
+    } catch (error) {
+      console.error("Fetch background error:", error);
+      setBgLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && chatId && currentUser?.token) {
+      fetchBackground();
+    }
+    // eslint-disable-next-line
+  }, [isOpen, chatId, currentUser?.token]);
+
+  // Safety check - if no user is provided, don't render anything
+  if (!user) {
+    return null;
+  }
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -60,6 +94,18 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
   };
 
   const handleSave = async () => {
+    if (!isOwnProfile) {
+      toast({
+        title: "Error",
+        description: "You can only edit your own profile",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
+      return;
+    }
+
     if (!name.trim()) {
       toast({
         title: "Error",
@@ -133,67 +179,51 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
     fileInputRef.current?.click();
   };
 
-  // Fetch current background for this chat (if chatId is provided)
-  const fetchBackground = async () => {
-    if (!chatId) return;
-    try {
-      setBgLoading(true);
-      const config_headers = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, config_headers);
-      if (data) {
-        setBgType(data.type);
-        if (data.type === "color") setBgColor(data.value);
-        if (data.type === "image") setBgImage(data.value);
-      } else {
-        setBgType("color");
-        setBgColor("#f8fafc");
-        setBgImage("");
-      }
-      setBgLoading(false);
-    } catch {
-      setBgLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    if (isOpen && chatId) fetchBackground();
-    // eslint-disable-next-line
-  }, [isOpen, chatId]);
-
-  const handleBgImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "File too large", status: "error", duration: 3000, isClosable: true, position: "bottom" });
-        return;
-      }
-      if (!file.type.startsWith('image/')) {
-        toast({ title: "Invalid file type", status: "error", duration: 3000, isClosable: true, position: "bottom" });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => setBgImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSaveBackground = async () => {
-    if (!chatId) return;
+    if (!chatId) {
+      console.error("No chatId provided for background update");
+      toast({ title: "Error", description: "No chat ID provided", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+      return;
+    }
+    
+    if (!currentUser?.token) {
+      console.error("No user token available for background update");
+      toast({ title: "Error", description: "Authentication required", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+      return;
+    }
+
     try {
       setBgLoading(true);
-      const config_headers = { headers: { Authorization: `Bearer ${user.token}` } };
-      console.log("[ProfileModal] Using token for background update:", user.token);
-      const payload = bgType === "color"
-        ? { type: "color", value: bgColor }
-        : { type: "image", value: bgImage };
-      await axios.put(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, payload, config_headers);
+      const config_headers = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+      console.log("[ProfileModal] Using token for background update:", currentUser.token);
+      console.log("[ProfileModal] Chat ID:", chatId);
+      console.log("[ProfileModal] Background color:", bgColor);
+      
+      const payload = { type: "color", value: bgColor };
+      
+      console.log("[ProfileModal] Request payload:", payload);
+      console.log("[ProfileModal] Request URL:", `${config.BACKEND_URL}/api/user/chat-background/${chatId}`);
+      
+      const response = await axios.put(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, payload, config_headers);
+      console.log("[ProfileModal] Response:", response.data);
+      
       setBgLoading(false);
       toast({ title: "Background updated!", status: "success", duration: 2000, isClosable: true, position: "bottom" });
       setShowBgPicker(false);
       if (typeof onBackgroundChange === "function") onBackgroundChange();
-    } catch {
+    } catch (error) {
+      console.error("Background update error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       setBgLoading(false);
-      toast({ title: "Failed to update background", status: "error", duration: 3000, isClosable: true, position: "bottom" });
+      toast({ 
+        title: "Failed to update background", 
+        description: error.response?.data?.message || error.message || "Unknown error",
+        status: "error", 
+        duration: 3000, 
+        isClosable: true, 
+        position: "bottom" 
+      });
     }
   };
 
@@ -221,7 +251,7 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
             color="white"
             borderRadius="md"
           >
-            {isEditing ? "Edit Profile" : user?.name}
+            {isEditing ? "Edit Profile" : (isOwnProfile ? user?.name : "View Profile")}
           </ModalHeader>
           <ModalCloseButton color="white" />
           <ModalBody
@@ -237,15 +267,15 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
               <Box position="relative">
                 <Avatar
                   size="2xl"
-                  cursor={isEditing ? "pointer" : "default"}
+                  cursor={isEditing && isOwnProfile ? "pointer" : "default"}
                   name={user?.name}
                   src={isEditing ? pic : user?.pic}
                   border="4px solid"
                   borderColor="purple.500"
-                  onClick={isEditing ? triggerFileInput : undefined}
-                  _hover={isEditing ? { opacity: 0.8 } : {}}
+                  onClick={isEditing && isOwnProfile ? triggerFileInput : undefined}
+                  _hover={isEditing && isOwnProfile ? { opacity: 0.8 } : {}}
                 />
-                {isEditing && (
+                {isEditing && isOwnProfile && (
                   <IconButton
                     icon={<EditIcon />}
                     size="sm"
@@ -281,42 +311,14 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                   </Button>
                   {showBgPicker && (
                     <Box p={3} borderRadius="lg" bg="#f8fafc" boxShadow="md" mt={2}>
-                      <HStack mb={2}>
-                        <Button
-                          size="xs"
-                          colorScheme={bgType === "color" ? "purple" : "gray"}
-                          variant={bgType === "color" ? "solid" : "outline"}
-                          onClick={() => setBgType("color")}
-                        >
-                          Solid Color
-                        </Button>
-                        <Button
-                          size="xs"
-                          colorScheme={bgType === "image" ? "purple" : "gray"}
-                          variant={bgType === "image" ? "solid" : "outline"}
-                          onClick={() => setBgType("image")}
-                        >
-                          Image
-                        </Button>
-                      </HStack>
-                      {bgType === "color" && (
-                        <Box>
-                          <SketchPicker
-                            color={bgColor}
-                            onChangeComplete={(color) => setBgColor(color.hex)}
-                            disableAlpha
-                          />
-                          <Box mt={2} w="100%" h="40px" borderRadius="md" bg={bgColor} border="1px solid #ccc" />
-                        </Box>
-                      )}
-                      {bgType === "image" && (
-                        <Box>
-                          <Input type="file" accept="image/*" onChange={handleBgImageUpload} mb={2} />
-                          {bgImage && (
-                            <Box mt={2} w="100%" h="80px" borderRadius="md" bg="#eee" backgroundImage={`url(${bgImage})`} backgroundSize="cover" backgroundPosition="center" />
-                          )}
-                        </Box>
-                      )}
+                      <Box>
+                        <SketchPicker
+                          color={bgColor}
+                          onChangeComplete={(color) => setBgColor(color.hex)}
+                          disableAlpha
+                        />
+                        <Box mt={2} w="100%" h="40px" borderRadius="md" bg={bgColor} border="1px solid #ccc" />
+                      </Box>
                       <Button
                         size="sm"
                         colorScheme="purple"
@@ -397,15 +399,17 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                 </>
               ) : (
                 <>
-                  <Button
-                    onClick={handleEdit}
-                    bg="white"
-                    color="purple.700"
-                    _hover={{ bg: "purple.50" }}
-                    leftIcon={<EditIcon />}
-                  >
-                    Edit Profile
-                  </Button>
+                  {isOwnProfile && (
+                    <Button
+                      onClick={handleEdit}
+                      bg="white"
+                      color="purple.700"
+                      _hover={{ bg: "purple.50" }}
+                      leftIcon={<EditIcon />}
+                    >
+                      Edit Profile
+                    </Button>
+                  )}
                   <Button
                     onClick={onClose}
                     bg="gray.100"

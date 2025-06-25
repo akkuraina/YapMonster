@@ -358,15 +358,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     <Flex alignItems="center" justifyContent="center" gap={3}>
                       <Avatar
                         size="md"
-                        name={selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}
-                        src={selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users)?.pic : ""}
+                        name={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.name || "Unknown User" : "Unknown User"}
+                        src={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.pic || "" : ""}
                         border="2px solid"
                         borderColor="rgba(255, 255, 255, 0.3)"
                         bg="blue.600"
                       />
                       <Text>{selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}</Text>
                       <ProfileModal
-                        user={user}
+                        user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : user}
                         chatId={selectedChat._id}
                         onBackgroundChange={fetchChatBg}
                       />

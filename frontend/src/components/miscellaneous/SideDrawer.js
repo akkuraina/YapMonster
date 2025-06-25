@@ -14,7 +14,7 @@ import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { Avatar } from "@chakra-ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/toast";
-import { getSender } from "../../config/ChatLogics";
+import { getSender, getSenderFull } from "../../config/ChatLogics";
 import ProfileModal from "./ProfileModal";
 import { ChatState } from "../../Context/ChatProvider";
 import { Menu as ChakraMenu, MenuButton as ChakraMenuButton, MenuList as ChakraMenuList, MenuItem as ChakraMenuItem, IconButton } from "@chakra-ui/react";
@@ -91,7 +91,6 @@ function SideDrawer() {
     navigate("/");
   };
 
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
@@ -107,6 +106,7 @@ function SideDrawer() {
         boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
         backdropFilter="blur(10px)"
         position="relative"
+        zIndex={1000}
         _before={{
           content: '""',
           position: "absolute",
@@ -234,10 +234,10 @@ function SideDrawer() {
 
           {/* Profile and logout section on the right */}
           <Flex alignItems="center">
-            {/* New Profile Popover */}
-            <Box position="relative">
-              <Box
-                as="button"
+            {/* Profile Menu */}
+            <Menu>
+              <MenuButton
+                as={Box}
                 border="none"
                 bg="transparent"
                 p={0}
@@ -246,7 +246,6 @@ function SideDrawer() {
                 cursor="pointer"
                 _hover={{ transform: "scale(1.15)", boxShadow: "0 4px 16px rgba(90, 103, 216, 0.25)" }}
                 transition="all 0.2s cubic-bezier(.4,2,.6,1)"
-                onClick={() => setShowProfileMenu((v) => !v)}
                 aria-label="Open profile menu"
                 id="profile-avatar-btn"
               >
@@ -260,50 +259,41 @@ function SideDrawer() {
                   borderRadius="full"
                   pointerEvents="none"
                 />
-              </Box>
-              {/* Popover menu */}
-              {showProfileMenu && (
-                <Box
-                  position="absolute"
-                  top="calc(100% + 10px)"
-                  right={0}
-                  bg="white"
-                  borderRadius="xl"
-                  boxShadow="0 8px 32px rgba(90, 103, 216, 0.18)"
-                  minW="160px"
-                  zIndex={100}
-                  p={2}
-                  onMouseLeave={() => setShowProfileMenu(false)}
-                >
-                  <ProfileModal user={user}>
-                    <Button
-                      w="100%"
-                      justifyContent="flex-start"
-                      variant="ghost"
-                      borderRadius="md"
-                      fontWeight="600"
-                      color="purple.700"
-                      _hover={{ bg: "purple.50" }}
-                      mb={1}
-                    >
-                      My Profile
-                    </Button>
-                  </ProfileModal>
-                  <Button
+              </MenuButton>
+              <MenuList 
+                bg="white" 
+                borderRadius="xl"
+                boxShadow="0 8px 32px rgba(90, 103, 216, 0.18)"
+                border="none"
+                p={2}
+                zIndex={9999}
+              >
+                <ProfileModal user={user}>
+                  <MenuItem
                     w="100%"
                     justifyContent="flex-start"
-                    variant="ghost"
                     borderRadius="md"
                     fontWeight="600"
-                    color="red.500"
-                    _hover={{ bg: "red.50" }}
-                    onClick={logoutHandler}
+                    color="purple.700"
+                    _hover={{ bg: "purple.50" }}
+                    mb={1}
                   >
-                    Logout
-                  </Button>
-                </Box>
-              )}
-            </Box>
+                    My Profile
+                  </MenuItem>
+                </ProfileModal>
+                <MenuItem
+                  w="100%"
+                  justifyContent="flex-start"
+                  borderRadius="md"
+                  fontWeight="600"
+                  color="red.500"
+                  _hover={{ bg: "red.50" }}
+                  onClick={logoutHandler}
+                >
+                  Logout
+                </MenuItem>
+              </MenuList>
+            </Menu>
           </Flex>
         </Flex>
       </Box>
@@ -360,12 +350,12 @@ function SideDrawer() {
                       name={
                         chat.isGroupChat 
                           ? chat.chatName 
-                          : (chat.users && chat.users.length > 0 ? getSender(user, chat.users) : "Unknown User")
+                          : (chat.users && chat.users.length > 0 ? getSenderFull(user, chat.users)?.name || "Unknown User" : "Unknown User")
                       }
                       src={
                         chat.isGroupChat 
                           ? chat.groupPic 
-                          : (chat.users && chat.users.length > 0 ? getSender(user, chat.users)?.pic : "")
+                          : (chat.users && chat.users.length > 0 ? getSenderFull(user, chat.users)?.pic || "" : "")
                       }
                       border="2px solid"
                       borderColor="rgba(255, 255, 255, 0.3)"
