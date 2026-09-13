@@ -133,4 +133,84 @@ const deleteMessageForMe = asyncHandler(async (req, res) => {
   res.json({ message: "Message deleted for you" });
 });
 
-module.exports = { allMessages, sendMessage, deleteMessageForEveryone, deleteMessageForMe };
+//@description     Record a Call Log in Chat
+//@route           POST /api/message/call
+//@access          Protected
+const recordCallMessage = asyncHandler(async (req, res) => {
+  const {
+    chatId,
+    callType = "video",
+    status = "completed",
+    duration = 0,
+    startedAt,
+    endedAt,
+  } = req.body;
+
+  if (!chatId) {
+    return res.status(400).json({ message: "chatId is required" });
+  }
+
+  const chat = await Chat.findOne({
+    _id: chatId,
+    users: req.user._id,
+  });
+
+  if (!chat) {
+    res.status(403);
+    throw new Error("You are not authorized to log calls in this chat");
+  }
+
+  let contentText = "Video Call";
+  if (status === "missed") {
+    contentText = "Missed Video Call";
+  } else if (status === "declined") {
+    contentText = "Declined Video Call";
+  } else if (duration > 0) {
+    const mins = Math.floor(duration / 60);
+    const secs = duration % 60;
+    const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    contentText = `Video Call (${durStr})`;
+  }
+
+  const newCallMessage = {
+    sender: req.user._id,
+    content: contentText,
+    chat: chatId,
+    messageType: "call",
+    callInfo: {
+      callType: callType || "video",
+      status: status || "completed",
+      duration: duration || 0,
+      startedAt: startedAt ? new Date(startedAt) : new Date(),
+      endedAt: endedAt ? new Date(endedAt) : new Date(),
+    },
+  };
+
+  try {
+    const createdMessage = await Message.create(newCallMessage);
+
+    const message = await Message.findById(createdMessage._id)
+      .populate("sender", "name pic email")
+      .populate({
+        path: "chat",
+        populate: { path: "users", select: "name pic email" },
+      });
+
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
+
+    res.json(message);
+  } catch (error) {
+    if (res.statusCode !== 403) {
+      res.status(400);
+    }
+    throw new Error(error.message);
+  }
+});
+
+module.exports = {
+  allMessages,
+  sendMessage,
+  deleteMessageForEveryone,
+  deleteMessageForMe,
+  recordCallMessage,
+};

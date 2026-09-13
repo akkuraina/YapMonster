@@ -25,6 +25,31 @@ import GroupChatModal from "./miscellaneous/GroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
 
+const formatChatListTime = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const now = new Date();
+
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return "Yesterday";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
   const [chatFilter, setChatFilter] = useState("");
@@ -244,14 +269,28 @@ const MyChats = ({ fetchAgain }) => {
                     />
 
                     <Box flex="1" minW="0" overflow="hidden">
-                      <Text
-                        fontWeight="700"
-                        fontSize="sm"
-                        noOfLines={1}
-                        color={isSelected ? "gray.900" : "white"}
-                      >
-                        {chatTitle}
-                      </Text>
+                      <Flex justify="space-between" align="center">
+                        <Text
+                          fontWeight="700"
+                          fontSize="sm"
+                          noOfLines={1}
+                          color={isSelected ? "gray.900" : "white"}
+                          flex="1"
+                          mr={2}
+                        >
+                          {chatTitle}
+                        </Text>
+                        {chat.latestMessage && (
+                          <Text
+                            fontSize="2xs"
+                            color={isSelected ? "gray.500" : "rgba(255, 255, 255, 0.5)"}
+                            fontWeight="500"
+                            flexShrink={0}
+                          >
+                            {formatChatListTime(chat.latestMessage.createdAt)}
+                          </Text>
+                        )}
+                      </Flex>
 
                       {chat.latestMessage ? (
                         <Text
@@ -259,14 +298,32 @@ const MyChats = ({ fetchAgain }) => {
                           color={isSelected ? "gray.600" : "rgba(255, 255, 255, 0.75)"}
                           noOfLines={1}
                         >
-                          <Text as="span" fontWeight="600">
-                            {chat.latestMessage.sender?._id === user._id
-                              ? "You: "
-                              : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
-                          </Text>
-                          {chat.latestMessage.deletedForEveryone
-                            ? "🚫 This message was deleted"
-                            : chat.latestMessage.content}
+                          {chat.latestMessage.messageType === "call" ? (
+                            <Text
+                              as="span"
+                              color={
+                                chat.latestMessage.callInfo?.status === "missed"
+                                  ? "red.400"
+                                  : isSelected
+                                  ? "purple.600"
+                                  : "purple.300"
+                              }
+                              fontWeight="600"
+                            >
+                              📹 {chat.latestMessage.content}
+                            </Text>
+                          ) : (
+                            <>
+                              <Text as="span" fontWeight="600">
+                                {chat.latestMessage.sender?._id === user._id
+                                  ? "You: "
+                                  : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
+                              </Text>
+                              {chat.latestMessage.deletedForEveryone
+                                ? "🚫 This message was deleted"
+                                : chat.latestMessage.content}
+                            </>
+                          )}
                         </Text>
                       ) : (
                         <Text fontSize="2xs" color={isSelected ? "gray.400" : "rgba(255, 255, 255, 0.5)"}>
@@ -302,7 +359,7 @@ const MyChats = ({ fetchAgain }) => {
                           fontSize="xs"
                           onClick={(e) => deleteChatHandler(chat._id, e)}
                         >
-                          🗑️ Delete Chat
+                          Delete Chat
                         </ChakraMenuItem>
                       </ChakraMenuList>
                     </ChakraMenu>

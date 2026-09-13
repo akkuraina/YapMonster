@@ -229,7 +229,7 @@ function SideDrawer() {
             >
               {!notification.length && (
                 <Text p={4} color="gray.500" fontSize="xs" textAlign="center" fontWeight="500">
-                  🎉 No new notifications
+                  No new notifications
                 </Text>
               )}
               {notification.map((notif) => (

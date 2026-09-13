@@ -38,6 +38,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const toast = useToast();
   const socketRef = useRef();
   const selectedChatCompareRef = useRef();
+  const callSessionRef = useRef({
+    chatId: null,
+    isInitiator: false,
+    isAnswered: false,
+    startTime: null,
+    logged: false,
+  });
   const [chatBg, setChatBg] = useState({ type: "color", value: "#f8fafc" });
 
   const defaultOptions = {
@@ -197,6 +204,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setIncomingCall(data);
     });
 
+    socketRef.current.on("call answered", () => {
+      if (callSessionRef.current) {
+        callSessionRef.current.isAnswered = true;
+        callSessionRef.current.startTime = Date.now();
+      }
+    });
+
     socketRef.current.on("call rejected", (data) => {
       toast({
         title: "Call Declined",
@@ -207,6 +221,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         position: "top",
       });
       setVideoCallOpen(false);
+      const session = callSessionRef.current;
+      if (session && !session.logged && session.isInitiator && session.chatId) {
+        session.logged = true;
+        logCallHistory(session.chatId, "declined", 0);
+      }
     });
 
     socketRef.current.on("call ended", () => {
@@ -217,7 +236,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         isClosable: true,
         position: "top",
       });
-      setVideoCallOpen(false);
+      handleVideoCallClose();
     });
 
     return () => {
@@ -227,6 +246,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       socketRef.current.off("message received");
       socketRef.current.off("message deleted");
       socketRef.current.off("incoming call");
+      socketRef.current.off("call answered");
       socketRef.current.off("call rejected");
       socketRef.current.off("call ended");
       socketRef.current.off("connect_error");
@@ -234,8 +254,75 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     // eslint-disable-next-line
   }, []);
 
+  const logCallHistory = async (chatId, status, duration = 0) => {
+    if (!chatId || !user) return;
+    try {
+      const configObj = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.post(
+        `${config.BACKEND_URL}/api/message/call`,
+        {
+          chatId,
+          callType: "video",
+          status,
+          duration,
+        },
+        configObj
+      );
+
+      if (socketRef.current) {
+        socketRef.current.emit("new message", data);
+      }
+
+      if (selectedChatCompareRef.current?._id === chatId) {
+        setMessages((prev) => {
+          if (!prev.some((m) => m._id === data._id)) {
+            return [...prev, data];
+          }
+          return prev;
+        });
+      }
+      setFetchAgain((prev) => !prev);
+    } catch (error) {
+      console.error("Failed to log call history:", error);
+    }
+  };
+
+  const handleVideoCallClose = () => {
+    setVideoCallOpen(false);
+    const session = callSessionRef.current;
+    if (session && !session.logged && session.chatId) {
+      session.logged = true;
+      const duration =
+        session.isAnswered && session.startTime
+          ? Math.max(0, Math.round((Date.now() - session.startTime) / 1000))
+          : 0;
+      const status = session.isAnswered
+        ? "completed"
+        : session.isInitiator
+        ? "missed"
+        : "declined";
+
+      if (session.isInitiator) {
+        logCallHistory(session.chatId, status, duration);
+      }
+    }
+  };
+
   const startVideoCall = () => {
     if (!selectedChat) return;
+
+    callSessionRef.current = {
+      chatId: selectedChat._id,
+      isInitiator: true,
+      isAnswered: false,
+      startTime: Date.now(),
+      logged: false,
+    };
 
     const callPayload = {
       chatId: selectedChat._id,
@@ -261,6 +348,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const handleAcceptIncomingCall = () => {
     if (!incomingCall) return;
+
+    callSessionRef.current = {
+      chatId: incomingCall.chatId,
+      isInitiator: false,
+      isAnswered: true,
+      startTime: Date.now(),
+      logged: false,
+    };
 
     const callPayload = {
       chatId: incomingCall.chatId,
@@ -476,7 +571,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </Flex>
             ) : (
               <Box flex="1" minH="0" overflow="hidden" display="flex" flexDirection="column" mb={3}>
-                <ScrollableChat messages={messages} socket={socketRef.current} setReplyingTo={setReplyingTo} />
+                <ScrollableChat
+                  messages={messages}
+                  socket={socketRef.current}
+                  setReplyingTo={setReplyingTo}
+                  onStartVideoCall={startVideoCall}
+                />
               </Box>
             )}
 
@@ -615,7 +715,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       {videoCallData && (
         <VideoCallModal
           isOpen={videoCallOpen}
-          onClose={() => setVideoCallOpen(false)}
+          onClose={handleVideoCallClose}
           chatId={videoCallData.chatId}
           chatName={videoCallData.chatName}
           isGroupChat={videoCallData.isGroupChat}
