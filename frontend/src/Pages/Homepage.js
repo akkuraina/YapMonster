@@ -12,11 +12,10 @@ import {
   HStack,
   Flex,
   Button,
-  SimpleGrid,
   Icon,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import { FaComments, FaVideo, FaUsers, FaPalette, FaArrowRight } from "react-icons/fa";
+import { FaComments, FaArrowRight } from "react-icons/fa";
 import Login from "../components/Authentication/Login";
 import Signup from "../components/Authentication/Signup";
 import YapMonsterWordmark from "../components/common/YapMonsterWordmark";
