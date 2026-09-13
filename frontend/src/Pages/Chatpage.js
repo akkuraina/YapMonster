@@ -7,7 +7,7 @@ import { ChatState } from "../Context/ChatProvider";
 
 const Chatpage = () => {
   const [fetchAgain, setFetchAgain] = useState(false);
-  const { user } = ChatState();
+  const { user, selectedChat } = ChatState();
 
   return (
     <Flex
@@ -34,7 +34,7 @@ const Chatpage = () => {
       >
         {/* Left: Chat List Panel */}
         <Box
-          display={{ base: "flex", md: "flex" }}
+          display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
           w={{ base: "100%", md: "360px", lg: "400px" }}
           maxW={{ base: "100%", md: "420px" }}
           flexShrink={0}
@@ -50,7 +50,8 @@ const Chatpage = () => {
           minW="0"
           minH="0"
           h="100%"
-          display={{ base: "flex", md: "flex" }}
+          w={{ base: "100%", md: "auto" }}
+          display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
         >
           {user && (
             <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
