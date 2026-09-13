@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
 import { Box, Text, Flex } from "@chakra-ui/layout";
-import { Menu, MenuButton, MenuList, MenuItem, IconButton } from "@chakra-ui/react";
+import { Menu, MenuButton, MenuList, MenuItem, IconButton, Icon } from "@chakra-ui/react";
 import { FiMoreVertical } from "react-icons/fi";
+import { FaReply } from "react-icons/fa";
 import axios from "axios";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
@@ -46,7 +47,7 @@ const formatTimestamp = (timestamp) => {
   })}`;
 };
 
-const ScrollableChat = ({ messages, socket }) => {
+const ScrollableChat = ({ messages, socket, setReplyingTo }) => {
   const { user, selectedChat } = ChatState();
   const [localMessages, setLocalMessages] = useState(messages);
   const chatContainerRef = useRef(null);
@@ -168,7 +169,7 @@ const ScrollableChat = ({ messages, socket }) => {
                   <Text
                     fontSize="2xs"
                     fontWeight="700"
-                    color="purple.700"
+                    color="#60A5FA"
                     ml={1}
                     mb={0.5}
                   >
@@ -177,42 +178,73 @@ const ScrollableChat = ({ messages, socket }) => {
                 )}
 
                 <Flex align="center" gap={1}>
-                  {/* Left Menu for Sent Messages */}
+                  {/* Left Actions for Sent Messages */}
                   {isSentByMe && !m.deletedForEveryone && (
-                    <Menu placement="left-start">
-                      <MenuButton
-                        as={IconButton}
-                        aria-label="Options"
-                        icon={<FiMoreVertical />}
+                    <Flex align="center" gap={0.5}>
+                      <IconButton
+                        aria-label="Reply"
+                        icon={<Icon as={FaReply} />}
                         size="xs"
                         variant="ghost"
                         color="gray.400"
                         opacity={0}
                         _groupHover={{ opacity: 1 }}
-                        _hover={{ bg: "rgba(0, 0, 0, 0.08)", color: "gray.700" }}
+                        _hover={{ bg: "rgba(255, 255, 255, 0.12)", color: "#BAE6FD" }}
                         borderRadius="full"
+                        onClick={() => setReplyingTo && setReplyingTo(m)}
                         transition="opacity 0.2s ease"
                       />
-                      <MenuList zIndex={2000} minW="150px" p={1.5} borderRadius="xl" boxShadow="0 8px 30px rgba(0,0,0,0.15)">
-                        <MenuItem
-                          borderRadius="lg"
-                          fontSize="xs"
-                          fontWeight="600"
-                          onClick={() => handleDeleteForMe(m._id)}
-                        >
-                          Delete for Me
-                        </MenuItem>
-                        <MenuItem
-                          borderRadius="lg"
-                          fontSize="xs"
-                          fontWeight="600"
-                          color="red.500"
-                          onClick={() => handleDeleteForEveryone(m._id)}
-                        >
-                          Delete for Everyone
-                        </MenuItem>
-                      </MenuList>
-                    </Menu>
+
+                      <Menu placement="left-start">
+                        <MenuButton
+                          as={IconButton}
+                          aria-label="Options"
+                          icon={<FiMoreVertical />}
+                          size="xs"
+                          variant="ghost"
+                          color="gray.400"
+                          opacity={0}
+                          _groupHover={{ opacity: 1 }}
+                          _hover={{ bg: "rgba(255, 255, 255, 0.12)", color: "white" }}
+                          borderRadius="full"
+                          transition="opacity 0.2s ease"
+                        />
+                        <MenuList zIndex={2000} minW="150px" p={1.5} borderRadius="xl" bg="rgba(15, 23, 42, 0.95)" border="1px solid rgba(255, 255, 255, 0.1)" boxShadow="0 8px 30px rgba(0,0,0,0.5)">
+                          <MenuItem
+                            borderRadius="lg"
+                            fontSize="xs"
+                            fontWeight="600"
+                            icon={<Icon as={FaReply} color="#60A5FA" />}
+                            bg="transparent"
+                            _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
+                            onClick={() => setReplyingTo && setReplyingTo(m)}
+                          >
+                            Reply
+                          </MenuItem>
+                          <MenuItem
+                            borderRadius="lg"
+                            fontSize="xs"
+                            fontWeight="600"
+                            bg="transparent"
+                            _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
+                            onClick={() => handleDeleteForMe(m._id)}
+                          >
+                            Delete for Me
+                          </MenuItem>
+                          <MenuItem
+                            borderRadius="lg"
+                            fontSize="xs"
+                            fontWeight="600"
+                            color="red.400"
+                            bg="transparent"
+                            _hover={{ bg: "rgba(239, 68, 68, 0.15)" }}
+                            onClick={() => handleDeleteForEveryone(m._id)}
+                          >
+                            Delete for Everyone
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                    </Flex>
                   )}
 
                   {/* Bubble Content */}
@@ -241,6 +273,37 @@ const ScrollableChat = ({ messages, socket }) => {
                     wordBreak="break-word"
                     position="relative"
                   >
+                    {/* Quoted Message Preview */}
+                    {m.replyTo && (
+                      <Box
+                        mb={2}
+                        p={2}
+                        bg={isSentByMe ? "rgba(0, 0, 0, 0.24)" : "rgba(90, 103, 216, 0.08)"}
+                        borderLeft="3px solid"
+                        borderLeftColor={isSentByMe ? "#BAE6FD" : "#5A67D8"}
+                        borderRadius="md"
+                        fontSize="xs"
+                      >
+                        <Text
+                          fontWeight="700"
+                          fontSize="2xs"
+                          color={isSentByMe ? "#BAE6FD" : "#5A67D8"}
+                          letterSpacing="0.02em"
+                          mb={0.5}
+                        >
+                          {m.replyTo.sender?._id === user._id ? "You" : m.replyTo.sender?.name || "User"}
+                        </Text>
+                        <Text
+                          color={isSentByMe ? "whiteAlpha.800" : "gray.600"}
+                          fontSize="xs"
+                          noOfLines={2}
+                          fontStyle={m.replyTo.deletedForEveryone ? "italic" : "normal"}
+                        >
+                          {m.replyTo.deletedForEveryone ? "🚫 This message was deleted" : m.replyTo.content}
+                        </Text>
+                      </Box>
+                    )}
+
                     {m.deletedForEveryone ? (
                       <Text fontStyle="italic" color={isSentByMe ? "whiteAlpha.700" : "gray.400"} fontSize="xs">
                         🚫 This message was deleted
@@ -261,33 +324,62 @@ const ScrollableChat = ({ messages, socket }) => {
                     </Text>
                   </Box>
 
-                  {/* Right Menu for Received Messages */}
+                  {/* Right Actions for Received Messages */}
                   {!isSentByMe && !m.deletedForEveryone && (
-                    <Menu placement="right-start">
-                      <MenuButton
-                        as={IconButton}
-                        aria-label="Options"
-                        icon={<FiMoreVertical />}
+                    <Flex align="center" gap={0.5}>
+                      <IconButton
+                        aria-label="Reply"
+                        icon={<Icon as={FaReply} />}
                         size="xs"
                         variant="ghost"
                         color="gray.400"
                         opacity={0}
                         _groupHover={{ opacity: 1 }}
-                        _hover={{ bg: "rgba(0, 0, 0, 0.08)", color: "gray.700" }}
+                        _hover={{ bg: "rgba(255, 255, 255, 0.12)", color: "#BAE6FD" }}
                         borderRadius="full"
+                        onClick={() => setReplyingTo && setReplyingTo(m)}
                         transition="opacity 0.2s ease"
                       />
-                      <MenuList zIndex={2000} minW="140px" p={1.5} borderRadius="xl" boxShadow="0 8px 30px rgba(0,0,0,0.15)">
-                        <MenuItem
-                          borderRadius="lg"
-                          fontSize="xs"
-                          fontWeight="600"
-                          onClick={() => handleDeleteForMe(m._id)}
-                        >
-                          Delete for Me
-                        </MenuItem>
-                      </MenuList>
-                    </Menu>
+
+                      <Menu placement="right-start">
+                        <MenuButton
+                          as={IconButton}
+                          aria-label="Options"
+                          icon={<FiMoreVertical />}
+                          size="xs"
+                          variant="ghost"
+                          color="gray.400"
+                          opacity={0}
+                          _groupHover={{ opacity: 1 }}
+                          _hover={{ bg: "rgba(255, 255, 255, 0.12)", color: "white" }}
+                          borderRadius="full"
+                          transition="opacity 0.2s ease"
+                        />
+                        <MenuList zIndex={2000} minW="140px" p={1.5} borderRadius="xl" bg="rgba(15, 23, 42, 0.95)" border="1px solid rgba(255, 255, 255, 0.1)" boxShadow="0 8px 30px rgba(0,0,0,0.5)">
+                          <MenuItem
+                            borderRadius="lg"
+                            fontSize="xs"
+                            fontWeight="600"
+                            icon={<Icon as={FaReply} color="#60A5FA" />}
+                            bg="transparent"
+                            _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
+                            onClick={() => setReplyingTo && setReplyingTo(m)}
+                          >
+                            Reply
+                          </MenuItem>
+                          <MenuItem
+                            borderRadius="lg"
+                            fontSize="xs"
+                            fontWeight="600"
+                            bg="transparent"
+                            _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
+                            onClick={() => handleDeleteForMe(m._id)}
+                          >
+                            Delete for Me
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                    </Flex>
                   )}
                 </Flex>
               </Box>

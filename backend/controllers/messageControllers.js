@@ -20,7 +20,14 @@ const allMessages = asyncHandler(async (req, res) => {
 
     const messages = await Message.find({ chat: req.params.chatId })
       .populate("sender", "name pic email")
-      .populate("chat");
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name pic email" },
+      })
+      .populate({
+        path: "chat",
+        populate: { path: "users", select: "name pic email" },
+      });
     res.json(messages);
   } catch (error) {
     if (res.statusCode !== 403) {
@@ -34,7 +41,7 @@ const allMessages = asyncHandler(async (req, res) => {
 //@route           POST /api/Message/
 //@access          Protected
 const sendMessage = asyncHandler(async (req, res) => {
-  const { content, chatId } = req.body;
+  const { content, chatId, replyTo } = req.body;
 
   if (!content || !chatId) {
     return res.status(400).json({ message: "Content and chatId are required" });
@@ -56,15 +63,23 @@ const sendMessage = asyncHandler(async (req, res) => {
     chat: chatId,
   };
 
-  try {
-    var message = await Message.create(newMessage);
+  if (replyTo) {
+    newMessage.replyTo = replyTo;
+  }
 
-    message = await message.populate("sender", "name pic");
-    message = await message.populate("chat");
-    message = await message.populate({
-      path: "chat.users",
-      select: "name pic email",
-    });
+  try {
+    const createdMessage = await Message.create(newMessage);
+
+    const message = await Message.findById(createdMessage._id)
+      .populate("sender", "name pic")
+      .populate({
+        path: "chat",
+        populate: { path: "users", select: "name pic email" },
+      })
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name pic email" },
+      });
 
     await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 

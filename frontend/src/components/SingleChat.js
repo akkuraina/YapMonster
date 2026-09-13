@@ -7,8 +7,8 @@ import { IconButton, Spinner, useToast, Icon, Tooltip } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { ArrowBackIcon, ArrowForwardIcon } from "@chakra-ui/icons";
-import { FaVideo, FaComments } from "react-icons/fa";
+import { ArrowBackIcon, ArrowForwardIcon, CloseIcon } from "@chakra-ui/icons";
+import { FaVideo, FaComments, FaReply } from "react-icons/fa";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import VideoCallModal from "./VideoCall/VideoCallModal";
@@ -28,6 +28,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
@@ -95,7 +96,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       socketRef.current.emit("stop typing", selectedChat._id);
     }
     const messageToSend = newMessage.trim();
+    const replyToSend = replyingTo ? replyingTo._id : undefined;
     setNewMessage("");
+    setReplyingTo(null);
 
     try {
       const config_headers = {
@@ -105,12 +108,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         },
       };
 
+      const payload = {
+        content: messageToSend,
+        chatId: selectedChat._id,
+      };
+      if (replyToSend) {
+        payload.replyTo = replyToSend;
+      }
+
       const { data } = await axios.post(
         `${config.BACKEND_URL}/api/message`,
-        {
-          content: messageToSend,
-          chatId: selectedChat._id,
-        },
+        payload,
         config_headers
       );
 
@@ -468,8 +476,49 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </Flex>
             ) : (
               <Box flex="1" minH="0" overflow="hidden" display="flex" flexDirection="column" mb={3}>
-                <ScrollableChat messages={messages} socket={socketRef.current} />
+                <ScrollableChat messages={messages} socket={socketRef.current} setReplyingTo={setReplyingTo} />
               </Box>
+            )}
+
+            {/* Replying Banner */}
+            {replyingTo && (
+              <Flex
+                mb={2}
+                px={3.5}
+                py={2}
+                bg="rgba(10, 18, 42, 0.95)"
+                backdropFilter="blur(16px)"
+                borderLeft="3px solid #60A5FA"
+                borderTop="1px solid rgba(255, 255, 255, 0.08)"
+                borderRight="1px solid rgba(255, 255, 255, 0.08)"
+                borderBottom="1px solid rgba(255, 255, 255, 0.08)"
+                borderRadius="xl"
+                justify="space-between"
+                align="center"
+                boxShadow="0 4px 16px rgba(0, 0, 0, 0.4)"
+              >
+                <Flex align="center" gap={2.5} overflow="hidden" mr={2}>
+                  <Icon as={FaReply} color="#60A5FA" fontSize="xs" flexShrink={0} />
+                  <Box overflow="hidden">
+                    <Text fontSize="2xs" fontWeight="700" color="#BAE6FD" letterSpacing="0.02em">
+                      Replying to {replyingTo.sender?._id === user._id ? "yourself" : replyingTo.sender?.name}
+                    </Text>
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.7)" noOfLines={1}>
+                      {replyingTo.deletedForEveryone ? "🚫 This message was deleted" : replyingTo.content}
+                    </Text>
+                  </Box>
+                </Flex>
+                <IconButton
+                  size="xs"
+                  icon={<CloseIcon />}
+                  variant="ghost"
+                  color="gray.400"
+                  _hover={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}
+                  borderRadius="full"
+                  onClick={() => setReplyingTo(null)}
+                  aria-label="Cancel reply"
+                />
+              </Flex>
             )}
 
             {/* Typing indicator & Message Input Bar */}

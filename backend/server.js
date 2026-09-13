@@ -175,16 +175,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("new message", (newMessageReceived) => {
-    if (!newMessageReceived.chat || !newMessageReceived.chat.users) {
+    if (!newMessageReceived || !newMessageReceived.chat || !newMessageReceived.chat.users) {
       return console.error("chat.users not defined in new message event");
     }
 
-    newMessageReceived.chat.users.forEach((user) => {
-      const userId = user._id.toString();
-      const senderId = newMessageReceived.sender._id.toString();
+    const senderId = (
+      newMessageReceived.sender?._id ||
+      newMessageReceived.sender ||
+      ""
+    ).toString();
 
-      if (userId === senderId) return;
-      socket.in(userId).emit("message received", newMessageReceived);
+    newMessageReceived.chat.users.forEach((user) => {
+      if (!user) return;
+      const targetUserId = (user._id || user).toString();
+
+      if (targetUserId === senderId) return;
+      socket.in(targetUserId).emit("message received", newMessageReceived);
     });
   });
 
