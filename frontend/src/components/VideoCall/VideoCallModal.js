@@ -194,7 +194,7 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
             <Box w="100%" h="100%" position="relative">
               <LiveKitRoom
                 video={false}
-                audio={false}
+                audio={true}
                 token={token}
                 serverUrl={serverUrl}
                 data-lk-theme="default"

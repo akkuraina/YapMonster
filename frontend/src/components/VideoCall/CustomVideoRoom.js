@@ -6,6 +6,7 @@ import {
   ControlBar,
   useLocalParticipant,
   useRoomContext,
+  RoomAudioRenderer,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { Box, Flex, Text, Icon } from "@chakra-ui/react";
@@ -188,6 +189,9 @@ const CustomVideoRoom = () => {
 
   return (
     <Flex direction="column" h="100%" bg="#070d1e">
+      {/* LiveKit Room Audio Renderer for hearing remote participants */}
+      <RoomAudioRenderer />
+
       {/* Video Area */}
       <Box flex="1" minH="0" overflow="hidden" p={3}>
         {isOneOnOne ? (
