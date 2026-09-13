@@ -41,7 +41,7 @@ function Homepage() {
   const scrollToAuth = (tabToSelect = 0) => {
     setTabIndex(tabToSelect);
     if (authSectionRef.current) {
-      authSectionRef.current.scrollIntoView({ behavior: "smooth" });
+      authSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -153,8 +153,8 @@ function Homepage() {
       {/* 2. Hero Section (Centered & Minimal) */}
       <Container
         maxW="5xl"
-        pt={{ base: 20, md: 28, lg: 36 }}
-        pb={{ base: 20, md: 28, lg: 36 }}
+        pt={{ base: 14, sm: 20, md: 28, lg: 36 }}
+        pb={{ base: 12, sm: 16, md: 24 }}
         position="relative"
         zIndex={2}
         display="flex"
@@ -177,7 +177,7 @@ function Homepage() {
         />
 
         <VStack
-          spacing={{ base: 6, md: 8 }}
+          spacing={{ base: 5, md: 8 }}
           maxW="920px"
           mx="auto"
           align="center"
@@ -192,9 +192,9 @@ function Homepage() {
           {/* Hero Main Heading with Wordmark */}
           <Box maxW="900px">
             <Text
-              fontSize={{ base: "2.5rem", sm: "3.5rem", md: "4.6rem", lg: "5.4rem" }}
+              fontSize={{ base: "2.2rem", sm: "3.2rem", md: "4.4rem", lg: "5.4rem" }}
               fontWeight="800"
-              lineHeight={1.12}
+              lineHeight={1.15}
               letterSpacing="-0.03em"
               color="white"
             >
@@ -205,11 +205,12 @@ function Homepage() {
 
           {/* Subheading Paragraph */}
           <Text
-            fontSize={{ base: "md", sm: "lg", md: "xl" }}
+            fontSize={{ base: "sm", sm: "md", md: "xl" }}
             color="rgba(255, 255, 255, 0.72)"
             lineHeight={1.65}
             maxW="640px"
             fontWeight="400"
+            px={{ base: 2, sm: 0 }}
           >
             Experience ultra-fast real-time messaging, team group rooms, and seamless LiveKit video calls wrapped in a polished, fluid interface.
           </Text>
@@ -217,7 +218,7 @@ function Homepage() {
           {/* Hero CTA Buttons */}
           <HStack
             spacing={4}
-            pt={3}
+            pt={2}
             justify="center"
             flexWrap="wrap"
           >
@@ -227,9 +228,9 @@ function Homepage() {
               color="white"
               borderRadius="xl"
               px={8}
-              h="54px"
+              h={{ base: "48px", md: "54px" }}
               fontWeight="700"
-              fontSize="md"
+              fontSize={{ base: "sm", md: "md" }}
               rightIcon={<FaArrowRight />}
               boxShadow="0 10px 28px rgba(90, 103, 216, 0.45)"
               _hover={{
@@ -251,9 +252,9 @@ function Homepage() {
               color="white"
               borderRadius="xl"
               px={7}
-              h="54px"
+              h={{ base: "48px", md: "54px" }}
               fontWeight="600"
-              fontSize="md"
+              fontSize={{ base: "sm", md: "md" }}
               _hover={{
                 bg: "rgba(255, 255, 255, 0.15)",
                 borderColor: "rgba(255, 255, 255, 0.3)",
@@ -270,11 +271,18 @@ function Homepage() {
       </Container>
 
       {/* 4. Auth Section */}
-      <Container maxW="lg" py={{ base: 16, md: 24 }} ref={authSectionRef} id="auth-section">
-        <VStack spacing={6} w="100%">
-          <VStack spacing={2} textAlign="center">
+      <Container
+        maxW="lg"
+        pt={{ base: 4, sm: 8, md: 16 }}
+        pb={{ base: 28, md: 36 }}
+        px={{ base: 4, sm: 6 }}
+        ref={authSectionRef}
+        id="auth-section"
+      >
+        <VStack spacing={{ base: 4, sm: 6 }} w="100%">
+          <VStack spacing={1.5} textAlign="center">
             <YapMonsterWordmark size="xl" color="gradient" glow={true} />
-            <Text fontSize="sm" color="rgba(255, 255, 255, 0.65)">
+            <Text fontSize="xs" color="rgba(255, 255, 255, 0.65)">
               Sign in to your account or get started in seconds
             </Text>
           </VStack>
@@ -284,10 +292,10 @@ function Homepage() {
             bg="rgba(7, 13, 30, 0.85)"
             backdropFilter="blur(24px)"
             border="1px solid rgba(255, 255, 255, 0.08)"
-            borderRadius="28px"
+            borderRadius={{ base: "22px", sm: "28px" }}
             boxShadow="0 24px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(56, 189, 248, 0.08)"
             w="100%"
-            p={{ base: 5, sm: 7 }}
+            p={{ base: 4, sm: 7 }}
           >
             <Tabs
               isFitted

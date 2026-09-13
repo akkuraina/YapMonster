@@ -180,15 +180,15 @@ const Signup = () => {
   };
 
   return (
-    <VStack spacing={3.5} w="100%">
+    <VStack spacing={{ base: 2.5, sm: 3.5 }} w="100%">
       <FormControl id="signup-name" isRequired>
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1}
+          mb={0.5}
         >
           Full Name
         </FormLabel>
@@ -199,7 +199,7 @@ const Signup = () => {
           bg="rgba(255, 255, 255, 0.07)"
           border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          fontSize="sm"
+          fontSize={{ base: "xs", sm: "sm" }}
           _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
             borderColor: "#63B3ED",
@@ -211,7 +211,7 @@ const Signup = () => {
             borderColor: "rgba(255, 255, 255, 0.25)",
           }}
           borderRadius="xl"
-          h="42px"
+          h={{ base: "38px", sm: "42px" }}
           transition="all 0.2s ease-in-out"
         />
       </FormControl>
@@ -220,10 +220,10 @@ const Signup = () => {
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1}
+          mb={0.5}
         >
           Email Address
         </FormLabel>
@@ -235,7 +235,7 @@ const Signup = () => {
           bg="rgba(255, 255, 255, 0.07)"
           border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          fontSize="sm"
+          fontSize={{ base: "xs", sm: "sm" }}
           _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
             borderColor: "#63B3ED",
@@ -247,7 +247,7 @@ const Signup = () => {
             borderColor: "rgba(255, 255, 255, 0.25)",
           }}
           borderRadius="xl"
-          h="42px"
+          h={{ base: "38px", sm: "42px" }}
           transition="all 0.2s ease-in-out"
         />
       </FormControl>
@@ -256,10 +256,10 @@ const Signup = () => {
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1}
+          mb={0.5}
         >
           Password
         </FormLabel>
@@ -272,7 +272,7 @@ const Signup = () => {
             bg="rgba(255, 255, 255, 0.07)"
             border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            fontSize="sm"
+            fontSize={{ base: "xs", sm: "sm" }}
             _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
               borderColor: "#63B3ED",
@@ -284,10 +284,10 @@ const Signup = () => {
               borderColor: "rgba(255, 255, 255, 0.25)",
             }}
             borderRadius="xl"
-            h="42px"
+            h={{ base: "38px", sm: "42px" }}
             transition="all 0.2s ease-in-out"
           />
-          <InputRightElement h="42px" pr={1}>
+          <InputRightElement h={{ base: "38px", sm: "42px" }} pr={1}>
             <Button
               h="26px"
               w="26px"
@@ -310,10 +310,10 @@ const Signup = () => {
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1}
+          mb={0.5}
         >
           Confirm Password
         </FormLabel>
@@ -326,7 +326,7 @@ const Signup = () => {
             bg="rgba(255, 255, 255, 0.07)"
             border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            fontSize="sm"
+            fontSize={{ base: "xs", sm: "sm" }}
             _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
               borderColor: "#63B3ED",
@@ -338,10 +338,10 @@ const Signup = () => {
               borderColor: "rgba(255, 255, 255, 0.25)",
             }}
             borderRadius="xl"
-            h="42px"
+            h={{ base: "38px", sm: "42px" }}
             transition="all 0.2s ease-in-out"
           />
-          <InputRightElement h="42px" pr={1}>
+          <InputRightElement h={{ base: "38px", sm: "42px" }} pr={1}>
             <Button
               h="26px"
               w="26px"
@@ -364,15 +364,21 @@ const Signup = () => {
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1}
+          mb={0.5}
         >
           Profile Avatar (Optional)
         </FormLabel>
-        <Flex align="center" gap={3}>
-          <Avatar size="sm" src={pic} name={name || "User"} border="2px solid rgba(255, 255, 255, 0.2)" />
+        <Flex align="center" gap={2.5} w="100%">
+          <Avatar
+            size={{ base: "xs", sm: "sm" }}
+            src={pic}
+            name={name || "User"}
+            border="2px solid rgba(255, 255, 255, 0.2)"
+            flexShrink={0}
+          />
           <Input
             type="file"
             p={1}
@@ -383,17 +389,19 @@ const Signup = () => {
             color="white"
             fontSize="xs"
             borderRadius="xl"
-            h="40px"
+            h={{ base: "36px", sm: "40px" }}
+            flex="1"
+            minW="0"
             sx={{
               "&::file-selector-button": {
                 bg: "rgba(255, 255, 255, 0.15)",
                 border: "none",
                 color: "white",
                 borderRadius: "md",
-                padding: "4px 8px",
-                marginRight: "8px",
+                padding: "3px 7px",
+                marginRight: "6px",
                 cursor: "pointer",
-                fontSize: "xs",
+                fontSize: "2xs",
                 fontWeight: "600",
                 "&:hover": { bg: "rgba(255, 255, 255, 0.25)" },
               },
@@ -408,10 +416,10 @@ const Signup = () => {
         isLoading={picLoading}
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         color="white"
-        h="46px"
+        h={{ base: "44px", sm: "48px" }}
         borderRadius="xl"
         fontWeight="700"
-        fontSize="sm"
+        fontSize={{ base: "xs", sm: "sm" }}
         letterSpacing="0.02em"
         boxShadow="0 8px 20px rgba(90, 103, 216, 0.35)"
         _hover={{
@@ -424,7 +432,8 @@ const Signup = () => {
           boxShadow: "0 4px 12px rgba(90, 103, 216, 0.3)",
         }}
         transition="all 0.2s ease-in-out"
-        mt={2}
+        mt={{ base: 2.5, sm: 3.5 }}
+        mb={{ base: 1, sm: 0 }}
       >
         Create Free Account
       </Button>

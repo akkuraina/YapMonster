@@ -10,7 +10,6 @@ import {
   IconButton,
   Icon,
   Button,
-  Badge,
 } from "@chakra-ui/react";
 import { FiMoreVertical } from "react-icons/fi";
 import { FaReply, FaVideo, FaVideoSlash, FaPhoneSlash } from "react-icons/fa";
@@ -166,26 +165,22 @@ const ScrollableChat = ({ messages, socket, setReplyingTo, onStartVideoCall }) =
             const durationStr = formatCallDuration(callInfo.duration);
 
             let statusLabel = "Video Call";
-            let statusColor = "purple.400";
             let callIcon = FaVideo;
             let iconBg = "rgba(139, 92, 246, 0.2)";
             let iconColor = "#A78BFA";
 
             if (isMissed) {
               statusLabel = isSentByMe ? "Outgoing Call (No Answer)" : "Missed Video Call";
-              statusColor = "red.400";
               callIcon = FaVideoSlash;
               iconBg = "rgba(239, 68, 68, 0.2)";
               iconColor = "#F87171";
             } else if (isDeclined) {
               statusLabel = isSentByMe ? "Call Declined" : "Declined Video Call";
-              statusColor = "orange.400";
               callIcon = FaPhoneSlash;
               iconBg = "rgba(249, 115, 22, 0.2)";
               iconColor = "#FB923C";
             } else if (isCompleted) {
               statusLabel = durationStr ? `Video Call • ${durationStr}` : "Video Call";
-              statusColor = "emerald.400";
               callIcon = FaVideo;
               iconBg = "rgba(16, 185, 129, 0.2)";
               iconColor = "#34D399";

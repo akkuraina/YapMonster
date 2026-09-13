@@ -13,7 +13,7 @@ const Chatpage = () => {
     <Flex
       direction="column"
       w="100vw"
-      h="100vh"
+      h={{ base: "100dvh", md: "100vh" }}
       overflow="hidden"
       bg="linear-gradient(135deg, #020617 0%, #080d24 50%, #020617 100%)"
       position="relative"

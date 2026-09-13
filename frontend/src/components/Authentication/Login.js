@@ -86,15 +86,15 @@ const Login = () => {
   };
 
   return (
-    <VStack spacing={4} w="100%">
+    <VStack spacing={{ base: 3, sm: 4 }} w="100%">
       <FormControl id="login-email" isRequired>
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1.5}
+          mb={0.5}
         >
           Email Address
         </FormLabel>
@@ -106,7 +106,7 @@ const Login = () => {
           bg="rgba(255, 255, 255, 0.07)"
           border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          fontSize="sm"
+          fontSize={{ base: "xs", sm: "sm" }}
           _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
             borderColor: "#63B3ED",
@@ -118,7 +118,7 @@ const Login = () => {
             borderColor: "rgba(255, 255, 255, 0.25)",
           }}
           borderRadius="xl"
-          h="44px"
+          h={{ base: "38px", sm: "44px" }}
           transition="all 0.2s ease-in-out"
         />
       </FormControl>
@@ -127,10 +127,10 @@ const Login = () => {
         <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="xs"
+          fontSize={{ base: "2xs", sm: "xs" }}
           letterSpacing="0.03em"
           textTransform="uppercase"
-          mb={1.5}
+          mb={0.5}
         >
           Password
         </FormLabel>
@@ -143,7 +143,7 @@ const Login = () => {
             bg="rgba(255, 255, 255, 0.07)"
             border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            fontSize="sm"
+            fontSize={{ base: "xs", sm: "sm" }}
             _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
               borderColor: "#63B3ED",
@@ -155,15 +155,15 @@ const Login = () => {
               borderColor: "rgba(255, 255, 255, 0.25)",
             }}
             borderRadius="xl"
-            h="44px"
+            h={{ base: "38px", sm: "44px" }}
             transition="all 0.2s ease-in-out"
             onKeyDown={(e) => e.key === "Enter" && submitHandler()}
           />
-          <InputRightElement h="44px" pr={1}>
+          <InputRightElement h={{ base: "38px", sm: "44px" }} pr={1}>
             <Button
-              h="28px"
-              w="28px"
-              minW="28px"
+              h="26px"
+              w="26px"
+              minW="26px"
               p={0}
               size="sm"
               onClick={handleClick}
@@ -188,10 +188,10 @@ const Login = () => {
         isLoading={loading}
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         color="white"
-        h="46px"
+        h={{ base: "44px", sm: "46px" }}
         borderRadius="xl"
         fontWeight="700"
-        fontSize="sm"
+        fontSize={{ base: "xs", sm: "sm" }}
         letterSpacing="0.02em"
         boxShadow="0 8px 20px rgba(90, 103, 216, 0.35)"
         _hover={{
@@ -204,7 +204,7 @@ const Login = () => {
           boxShadow: "0 4px 12px rgba(90, 103, 216, 0.3)",
         }}
         transition="all 0.2s ease-in-out"
-        mt={2}
+        mt={{ base: 2, sm: 2.5 }}
       >
         Sign In to YapMonster
       </Button>
@@ -215,7 +215,7 @@ const Login = () => {
         border="1px solid rgba(255, 255, 255, 0.12)"
         color="rgba(255, 255, 255, 0.85)"
         width="100%"
-        h="40px"
+        h={{ base: "38px", sm: "40px" }}
         onClick={handleGuestLogin}
         _hover={{
           bg: "rgba(255, 255, 255, 0.14)",
