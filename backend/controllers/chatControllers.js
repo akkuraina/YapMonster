@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Chat = require("../models/chatModel");
 const User = require("../models/userModel");
+const Message = require("../models/messageModel");
 
 // @description     Create or fetch One to One Chat
 // @route           POST /api/chat/
@@ -181,22 +182,28 @@ const addToGroup = asyncHandler(async (req, res) => {
 // @route   PUT /api/chat/groupPic
 // @access  Protected
 const updateGroupPic = asyncHandler(async (req, res) => {
-  console.log("updateGroupPic called with body:", req.body);
   const { chatId, groupPic } = req.body;
 
   if (!chatId) {
-    console.log("Error: chatId is missing");
     res.status(400);
     throw new Error("Chat ID is required");
   }
 
   if (!groupPic) {
-    console.log("Error: groupPic is missing");
     res.status(400);
     throw new Error("Group picture is required");
   }
 
-  console.log("Updating chat:", chatId, "with groupPic length:", groupPic.length);
+  if (groupPic.startsWith("data:image/")) {
+    const base64Data = groupPic.split(",")[1];
+    if (base64Data) {
+      const sizeInBytes = Math.ceil((base64Data.length * 3) / 4);
+      if (sizeInBytes > 500 * 1024) {
+        res.status(400);
+        throw new Error("Group picture must be under 500KB");
+      }
+    }
+  }
 
   try {
     const updatedChat = await Chat.findByIdAndUpdate(
@@ -208,15 +215,12 @@ const updateGroupPic = asyncHandler(async (req, res) => {
       .populate("groupAdmin", "-password");
 
     if (!updatedChat) {
-      console.log("Error: Chat not found with ID:", chatId);
       res.status(404);
       throw new Error("Chat Not Found");
     } else {
-      console.log("Successfully updated group picture for chat:", chatId);
-      return res.json(updatedChat); // Return after sending response
+      return res.json(updatedChat);
     }
   } catch (error) {
-    console.log("Database error:", error.message);
     res.status(500);
     throw new Error("Failed to update group picture: " + error.message);
   }
@@ -237,12 +241,14 @@ const deleteChat = asyncHandler(async (req, res) => {
     if (!chat.groupAdmin || chat.groupAdmin.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Only group admin can delete this chat" });
     }
+    await Message.deleteMany({ chat: chatId });
     await Chat.findByIdAndDelete(chatId);
     return res.json({ message: "Group chat deleted" });
   } else {
     // For personal chat, remove user from users array
     chat.users = chat.users.filter(u => u.toString() !== userId.toString());
     if (chat.users.length === 0) {
+      await Message.deleteMany({ chat: chatId });
       await Chat.findByIdAndDelete(chatId);
       return res.json({ message: "Chat deleted" });
     } else {

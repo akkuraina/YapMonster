@@ -17,8 +17,6 @@
     "vercel-build": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.2.5",
-    "@emotion/react": "^11.14.0",
     "bcryptjs": "^2.4.3",
     "colors": "^1.4.0",
     "cors": "^2.8.5",

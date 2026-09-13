@@ -123,7 +123,7 @@ const MyChats = ({ fetchAgain }) => {
 
   return (
     <Box
-      d={{ base: selectedChat ? "none" : "flex", md: "flex" }}
+      display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
       flexDir="column"
       alignItems="center"
       p={6}
@@ -142,7 +142,7 @@ const MyChats = ({ fetchAgain }) => {
         fontSize={{ base: "2xl", md: "3xl" }}
         fontFamily="'Poppins', sans-serif"
         fontWeight="700"
-        d="flex"
+        display="flex"
         w="100%"
         overflow="hidden"
         justifyContent="space-between"
@@ -162,7 +162,7 @@ const MyChats = ({ fetchAgain }) => {
         </Text>
         <Flex gap={2} alignItems="center">
           <Button
-            d="flex"
+            display="flex"
             fontSize={{ base: "sm", md: "md" }}
             rightIcon={<AddIcon />}
             bg="linear-gradient(135deg, #E6E6FA 0%, #D8BFD8 100%)"
@@ -188,7 +188,7 @@ const MyChats = ({ fetchAgain }) => {
           </Button>
           <GroupChatModal>
             <Button
-              d="flex"
+              display="flex"
               fontSize={{ base: "sm", md: "md" }}
               rightIcon={<AddIcon />}
               bg="linear-gradient(135deg, #4A148C 0%, #6A0DAD 100%)"
@@ -214,7 +214,7 @@ const MyChats = ({ fetchAgain }) => {
         </Flex>
       </Box>
       <Box
-        d="flex"
+        display="flex"
         flexDir="column"
         p={4}
         bg="rgba(255, 255, 255, 0.1)"
@@ -386,7 +386,7 @@ const MyChats = ({ fetchAgain }) => {
               scrollBehavior: 'smooth',
             }}
           >
-            <Box d="flex" pb={4} gap={3}>
+            <Box display="flex" pb={4} gap={3}>
               <Input
                 placeholder="Search by name or email"
                 value={search}
@@ -432,7 +432,7 @@ const MyChats = ({ fetchAgain }) => {
                 />
               ))
             )}
-            {loadingChat && <Spinner ml="auto" d="flex" color="purple.600" />}
+            {loadingChat && <Spinner ml="auto" display="flex" color="purple.600" />}
           </ModalBody>
         </ModalContent>
       </Modal>

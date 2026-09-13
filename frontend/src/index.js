@@ -5,7 +5,22 @@ import reportWebVitals from "./reportWebVitals";
 import { ChakraProvider } from "@chakra-ui/react";
 import ChatProvider from "./Context/ChatProvider";
 import { BrowserRouter } from "react-router-dom";
+import axios from "axios";
 import "./components/styles.css"; // Import global styles
+
+// Auto logout on 401 Unauthorized (JWT expiration)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (localStorage.getItem("userInfo")) {
+        localStorage.removeItem("userInfo");
+        window.location.href = "/";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 

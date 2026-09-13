@@ -8,12 +8,24 @@ const Chat = require("../models/chatModel");
 //@access          Protected
 const allMessages = asyncHandler(async (req, res) => {
   try {
+    const chat = await Chat.findOne({
+      _id: req.params.chatId,
+      users: req.user._id,
+    });
+
+    if (!chat) {
+      res.status(403);
+      throw new Error("You are not authorized to view messages in this chat");
+    }
+
     const messages = await Message.find({ chat: req.params.chatId })
       .populate("sender", "name pic email")
       .populate("chat");
     res.json(messages);
   } catch (error) {
-    res.status(400);
+    if (res.statusCode !== 403) {
+      res.status(400);
+    }
     throw new Error(error.message);
   }
 });
@@ -24,18 +36,18 @@ const allMessages = asyncHandler(async (req, res) => {
 const sendMessage = asyncHandler(async (req, res) => {
   const { content, chatId } = req.body;
 
-  console.log("Received message request:", {
-    content: content,
-    chatId: chatId,
-    body: req.body,
-    user: req.user._id
+  if (!content || !chatId) {
+    return res.status(400).json({ message: "Content and chatId are required" });
+  }
+
+  const chat = await Chat.findOne({
+    _id: chatId,
+    users: req.user._id,
   });
 
-  if (!content || !chatId) {
-    console.log("Invalid data passed into request");
-    console.log("Content:", content);
-    console.log("ChatId:", chatId);
-    return res.sendStatus(400);
+  if (!chat) {
+    res.status(403);
+    throw new Error("You are not authorized to send messages in this chat");
   }
 
   var newMessage = {
@@ -54,13 +66,13 @@ const sendMessage = asyncHandler(async (req, res) => {
       select: "name pic email",
     });
 
-    await Chat.findByIdAndUpdate(req.body.chatId, { latestMessage: message });
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
-    console.log("Message created successfully:", message);
     res.json(message);
   } catch (error) {
-    console.error("Error creating message:", error);
-    res.status(400);
+    if (res.statusCode !== 403) {
+      res.status(400);
+    }
     throw new Error(error.message);
   }
 });

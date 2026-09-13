@@ -430,7 +430,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
   return (
     <>
-      <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
+      <IconButton display={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
 
       <Modal onClose={onClose} isOpen={isOpen} isCentered size="lg">
         <ModalOverlay />
@@ -438,7 +438,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
           <ModalHeader
             fontSize="35px"
             fontFamily="Work sans"
-            d="flex"
+            display="flex"
             justifyContent="center"
             bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
             color="white"
@@ -448,7 +448,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
           <ModalCloseButton color="white" />
           <ModalBody 
-            d="flex" 
+            display="flex" 
             flexDir="column" 
             alignItems="center"
             bg="#E6E6FA"
@@ -573,7 +573,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
                 <Text color="purple.700" fontWeight="600" mb={3}>
                   Group Members
                 </Text>
-                <Box d="flex" flexWrap="wrap" pb={3}>
+                <Box display="flex" flexWrap="wrap" pb={3}>
                   {selectedChat.users.map((u) => (
                     <UserBadgeItem
                       key={u._id}
@@ -642,7 +642,14 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
             </VStack>
           </ModalBody>
           <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
-            <Button onClick={() => handleRemove(user)} colorScheme="red">
+            <Button
+              onClick={() => {
+                if (window.confirm("Are you sure you want to leave this group?")) {
+                  handleRemove(user);
+                }
+              }}
+              colorScheme="red"
+            >
               Leave Group
             </Button>
           </ModalFooter>

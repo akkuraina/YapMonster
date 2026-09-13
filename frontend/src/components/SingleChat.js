@@ -166,8 +166,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
 
   useEffect(() => {
-    console.log("Setting up socket connection to:", ENDPOINT);
-    
     // Only create socket if it doesn't exist
     if (!socketRef.current) {
       socketRef.current = io(ENDPOINT, {
@@ -176,33 +174,59 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         forceNew: false,
       });
     }
-    
+
     socketRef.current.emit("setup", user);
     socketRef.current.on("connected", () => {
-      console.log("Socket connected successfully");
       setSocketConnected(true);
     });
     socketRef.current.on("typing", () => {
-      console.log("Typing indicator received");
       setIsTyping(true);
     });
     socketRef.current.on("stop typing", () => {
-      console.log("Stop typing indicator received");
       setIsTyping(false);
     });
     socketRef.current.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
       setSocketConnected(false);
     });
 
+    socketRef.current.on("message received", (newMessageReceived) => {
+      const currentSelected = selectedChatCompareRef.current;
+      const isFromDifferentChat = !currentSelected || currentSelected._id !== newMessageReceived.chat._id;
+
+      if (isFromDifferentChat) {
+        setNotification((prev) => {
+          if (!prev.some((notif) => notif._id === newMessageReceived._id)) {
+            return [newMessageReceived, ...prev];
+          }
+          return prev;
+        });
+        setFetchAgain((prev) => !prev);
+      } else {
+        setMessages((prev) => {
+          if (!prev.some((msg) => msg._id === newMessageReceived._id)) {
+            return [...prev, newMessageReceived];
+          }
+          return prev;
+        });
+      }
+    });
+
+    socketRef.current.on("message deleted", (data) => {
+      if (!data || !data.messageId) return;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === data.messageId ? { ...msg, deletedForEveryone: true } : msg
+        )
+      );
+    });
+
     return () => {
-      console.log("Cleaning up socket connection");
       socketRef.current.off("connected");
       socketRef.current.off("typing");
       socketRef.current.off("stop typing");
       socketRef.current.off("message received");
+      socketRef.current.off("message deleted");
       socketRef.current.off("connect_error");
-      // Don't disconnect here, let it persist
     };
     // eslint-disable-next-line
   }, []);
@@ -210,65 +234,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     fetchMessages();
     selectedChatCompareRef.current = selectedChat;
-    
-    // Debug: Log selectedChat object
-    console.log("SelectedChat changed:", selectedChat);
-    console.log("SelectedChat._id:", selectedChat?._id);
-    console.log("SelectedChat keys:", selectedChat ? Object.keys(selectedChat) : "No chat selected");
-    
+
     // Clear notifications for this chat when selected
     if (selectedChat) {
-      setNotification(prev => prev.filter(notif => notif.chat._id !== selectedChat._id));
+      setNotification((prev) => prev.filter((notif) => notif.chat._id !== selectedChat._id));
     }
     // eslint-disable-next-line
   }, [selectedChat]);
-
-  useEffect(() => {
-    console.log("Setting up message received listener");
-    socketRef.current.on("message received", (newMessageReceived) => {
-      console.log("Message received via socket:", newMessageReceived);
-      console.log("Current selected chat:", selectedChatCompareRef.current);
-      console.log("Current notifications count:", notification.length);
-      console.log("Message sender ID:", newMessageReceived.sender._id);
-      console.log("Current user ID:", user._id);
-      
-      // Check if this message is from a different chat than the currently selected one
-      const isFromDifferentChat = !selectedChatCompareRef.current || selectedChatCompareRef.current._id !== newMessageReceived.chat._id;
-      
-      console.log("Is from different chat:", isFromDifferentChat);
-      
-      if (isFromDifferentChat) {
-        // Add to notifications if not already present
-        const isAlreadyNotified = notification.some(
-          (notif) => notif._id === newMessageReceived._id
-        );
-        console.log("Is already notified:", isAlreadyNotified);
-        
-        if (!isAlreadyNotified) {
-          console.log("Adding to notifications - message from different chat");
-          setNotification(prev => {
-            const newNotifications = [newMessageReceived, ...prev];
-            console.log("New notifications array:", newNotifications.length);
-            return newNotifications;
-          });
-          setFetchAgain(!fetchAgain);
-        }
-      } else {
-        // Add to current chat messages if not already present
-        const isAlreadyInMessages = messages.some(
-          (msg) => msg._id === newMessageReceived._id
-        );
-        if (!isAlreadyInMessages) {
-          console.log("Adding to current chat messages");
-          setMessages(prev => [...prev, newMessageReceived]);
-        }
-      }
-    });
-
-    return () => {
-      socketRef.current.off("message received");
-    };
-  }, [notification, messages, fetchAgain, user._id]);
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -331,7 +303,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             >
               <IconButton
                 icon={<ArrowBackIcon />}
-                onClick={() => setSelectedChat("")}
+                onClick={() => setSelectedChat(null)}
                 bg="rgba(255, 255, 255, 0.2)"
                 backdropFilter="blur(10px)"
                 border="2px solid rgba(255, 255, 255, 0.3)"
@@ -428,7 +400,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 display="flex"
                 flexDirection="column"
               >
-                <ScrollableChat messages={messages} />
+                <ScrollableChat messages={messages} socket={socketRef.current} />
               </Box>
             )}
 

@@ -20,7 +20,7 @@ const UserBadgeItem = ({ user, handleFunction, admin }) => {
       _hover={{ bg: "purple.600" }} /* Darker purple on hover */
     >
       <span>{user.name}</span>
-      {admin === user._id && <span> (Admin)</span>}
+      {(admin?._id === user._id || admin === user._id) && <span> (Admin)</span>}
       <CloseIcon pl={1} ml={2} cursor="pointer" />
     </Badge>
   );

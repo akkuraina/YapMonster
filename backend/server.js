@@ -23,24 +23,49 @@ console.log("=============================");
 
 const app = express();
 
-app.use(express.json({ limit: '50mb' })); // Accept JSON data with 50MB limit
-app.use(express.urlencoded({ limit: '50mb', extended: true })); // Accept URL-encoded data with 50MB limit
-app.use(morgan("dev")); // Log requests
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(morgan("dev"));
 app.use(helmet());
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+
+// Scoped rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-}));
+  message: "Too many requests from this IP, please try again after 15 minutes.",
+});
 
-// CORS middleware - MUST be before routes
-app.use(
-  cors({
-    origin: "*", // Allow all origins for local development
-    credentials: true
-  })
-);
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/user/login", authLimiter);
+app.use("/api", apiLimiter);
+
+// Dynamic allowed origins for CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      return callback(null, origin);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/user", userRoutes);
@@ -67,7 +92,13 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin: "*",
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+        return callback(null, origin);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   },
 });
@@ -81,39 +112,37 @@ io.on("connection", (socket) => {
       return;
     }
     const userId = userData._id.toString();
-    console.log("User setup:", userId);
     socket.join(userId);
     socket.emit("connected");
   });
 
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("User Joined Room: " + room);
   });
 
   socket.on("typing", (room) => {
-    console.log("Typing in room:", room);
     socket.in(room).emit("typing");
   });
-  
+
   socket.on("stop typing", (room) => {
-    console.log("Stop typing in room:", room);
     socket.in(room).emit("stop typing");
   });
 
+  socket.on("delete message", (data) => {
+    if (!data || !data.chatId) return;
+    socket.to(data.chatId).emit("message deleted", data);
+  });
+
   socket.on("new message", (newMessageReceived) => {
-    console.log("New message received:", newMessageReceived);
     if (!newMessageReceived.chat || !newMessageReceived.chat.users) {
       return console.error("chat.users not defined in new message event");
     }
 
     newMessageReceived.chat.users.forEach((user) => {
-      // Convert ObjectId to string for comparison
       const userId = user._id.toString();
       const senderId = newMessageReceived.sender._id.toString();
-      
+
       if (userId === senderId) return;
-      console.log("Emitting message to user:", userId);
       socket.in(userId).emit("message received", newMessageReceived);
     });
   });

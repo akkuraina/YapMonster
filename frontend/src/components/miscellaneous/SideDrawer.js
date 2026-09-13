@@ -22,6 +22,7 @@ import { FiMoreVertical } from "react-icons/fi";
 import axios from "axios";
 import { Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
+import config from "../../config/config";
 
 // Custom Notification Badge Component
 const NotificationBadge = ({ count, children }) => {
@@ -99,10 +100,10 @@ function SideDrawer() {
       <Box
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         w="100%"
-        p="20px 30px"
+        p={{ base: "10px 15px", md: "15px 30px" }}
         borderBottom="3px solid"
         borderColor="purple.700"
-        h="120px"
+        h={{ base: "70px", md: "90px" }}
         boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
         backdropFilter="blur(10px)"
         position="relative"
@@ -182,40 +183,13 @@ function SideDrawer() {
                     : `New Message from ${getSender(user, notif.chat.users)}`}
                 </MenuItem>
               ))}
-              {/* Debug: Add test notification */}
-              <MenuDivider />
-              <MenuItem
-                onClick={() => {
-                  const testNotification = {
-                    _id: Date.now().toString(),
-                    content: "Test message",
-                    sender: { name: "Test User" },
-                    chat: { 
-                      _id: "test-chat-id",
-                      chatName: "Test Chat",
-                      isGroupChat: false,
-                      users: [{ name: "Test User" }]
-                    }
-                  };
-                  setNotification(prev => [testNotification, ...prev]);
-                }}
-                borderRadius="lg"
-                _hover={{
-                  bg: "blue.100",
-                  transform: "translateX(5px)",
-                  transition: "all 0.2s ease-in-out"
-                }}
-                transition="all 0.2s ease-in-out"
-              >
-                🧪 Add Test Notification
-              </MenuItem>
             </MenuList>
           </Menu>
 
           {/* Centered Name */}
           <Flex direction="column" align="center" justify="center" flex="1">
             <Text
-              fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
+              fontSize={{ base: "2xl", md: "4xl", lg: "5xl" }}
               fontFamily="'Poppins', sans-serif"
               fontWeight="800"
               letterSpacing="tight"
@@ -415,7 +389,7 @@ function SideDrawer() {
                             e.stopPropagation();
                             if (window.confirm("Are you sure you want to delete this chat? This cannot be undone.")) {
                               try {
-                                await axios.delete(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/api/chat/${chat._id}`, {
+                                await axios.delete(`${config.BACKEND_URL}/api/chat/${chat._id}`, {
                                   headers: { Authorization: `Bearer ${user.token}` }
                                 });
                                 setChats(prev => prev.filter(c => c._id !== chat._id));

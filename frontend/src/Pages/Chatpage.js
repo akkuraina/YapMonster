@@ -13,23 +13,10 @@ const Chatpage = () => {
     <Box 
       width="100vw" 
       height="100vh" 
-      overflow="auto"
+      display="flex"
+      flexDirection="column"
+      overflow="hidden"
       bg="#E6E6FA"
-      css={{
-        scrollBehavior: 'smooth',
-        '&::-webkit-scrollbar': {
-          width: '0px !important',
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'transparent !important',
-        },
-        scrollbarWidth: 'none !important',
-        msOverflowStyle: 'none !important',
-      }}
     >
       {user && <SideDrawer />}
       <Box
@@ -37,7 +24,8 @@ const Chatpage = () => {
         justifyContent="flex-start"
         alignItems="stretch"
         width="100%"
-        height="calc(100vh - 120px)"
+        flex="1"
+        minH="0"
         padding="10px"
         bg="transparent"
       >

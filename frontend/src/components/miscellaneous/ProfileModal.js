@@ -233,7 +233,7 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
         <span onClick={onOpen}>{children}</span>
       ) : (
         <IconButton
-          d={{ base: "flex" }}
+          display={{ base: "flex" }}
           icon={<ViewIcon />}
           onClick={onOpen}
           colorScheme="purple"
@@ -245,7 +245,7 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
           <ModalHeader
             fontSize="40px"
             fontFamily="Work sans"
-            d="flex"
+            display="flex"
             justifyContent="center"
             bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
             color="white"
@@ -255,7 +255,7 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
           </ModalHeader>
           <ModalCloseButton color="white" />
           <ModalBody
-            d="flex"
+            display="flex"
             flexDir="column"
             alignItems="center"
             justifyContent="space-between"

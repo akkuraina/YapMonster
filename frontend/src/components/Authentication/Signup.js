@@ -88,7 +88,7 @@ const Signup = () => {
 
   const postDetails = (pics) => {
     setPicLoading(true);
-    if (pics === undefined) {
+    if (!pics) {
       toast({
         title: "Please Select an Image!",
         status: "warning",
@@ -96,29 +96,73 @@ const Signup = () => {
         isClosable: true,
         position: "bottom",
       });
+      setPicLoading(false);
       return;
     }
-    if (pics.type === "image/jpeg" || pics.type === "image/png") {
-      const data = new FormData();
-      data.append("file", pics);
-      data.append("upload_preset", "chat-app");
-      data.append("cloud_name", "piyushproj");
-      fetch("https://api.cloudinary.com/v1_1/piyushproj/image/upload", {
-        method: "post",
-        body: data,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setPic(data.url.toString());
-          setPicLoading(false);
-        })
-        .catch((err) => {
-          console.log(err);
-          setPicLoading(false);
+    if (pics.type === "image/jpeg" || pics.type === "image/png" || pics.type === "image/webp") {
+      if (pics.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Image too large!",
+          description: "Please select an image smaller than 2MB",
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+          position: "bottom",
         });
+        setPicLoading(false);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_SIZE = 250;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          setPic(compressedDataUrl);
+          setPicLoading(false);
+        };
+        img.onerror = () => {
+          setPic(e.target.result);
+          setPicLoading(false);
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Failed to read image",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "bottom",
+        });
+        setPicLoading(false);
+      };
+      reader.readAsDataURL(pics);
     } else {
       toast({
-        title: "Please Select an Image!",
+        title: "Please Select an Image (JPEG/PNG/WEBP)!",
         status: "warning",
         duration: 5000,
         isClosable: true,

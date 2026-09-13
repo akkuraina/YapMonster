@@ -2,20 +2,25 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
 
+const escapeRegex = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 //@description     Get or Search all users
 //@route           GET /api/user?search=
 //@access          Public
 const allUsers = asyncHandler(async (req, res) => {
-  const keyword = req.query.search
+  const search = req.query.search ? req.query.search.trim() : "";
+  const keyword = search
     ? {
         $or: [
-          { name: { $regex: req.query.search, $options: "i" } },
-          { email: { $regex: req.query.search, $options: "i" } },
+          { name: { $regex: escapeRegex(search), $options: "i" } },
+          { email: { $regex: escapeRegex(search), $options: "i" } },
         ],
       }
     : {};
 
-  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
+  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } }).select("-password");
   res.send(users);
 });
 
@@ -27,7 +32,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error("Please Enter all the Feilds");
+    throw new Error("Please Enter all the Fields");
+  }
+
+  if (password.length < 6) {
+    res.status(400);
+    throw new Error("Password must be at least 6 characters");
   }
 
   const userExists = await User.findOne({ email });
@@ -55,7 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error("User not found");
+    throw new Error("User registration failed");
   }
 });
 
@@ -91,6 +101,17 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   if (!name && !pic) {
     res.status(400);
     throw new Error("Please provide at least one field to update");
+  }
+
+  if (pic && pic.startsWith("data:image/")) {
+    const base64Data = pic.split(",")[1];
+    if (base64Data) {
+      const sizeInBytes = Math.ceil((base64Data.length * 3) / 4);
+      if (sizeInBytes > 500 * 1024) {
+        res.status(400);
+        throw new Error("Avatar image must be under 500KB");
+      }
+    }
   }
 
   const user = await User.findById(req.user._id);

@@ -15,7 +15,7 @@ const UserListItem = ({ user, handleFunction }) => {
         transition: "all 0.3s ease-in-out"
       }}
       w="100%"
-      d="flex"
+      display="flex"
       alignItems="center"
       color="gray.700"
       px={3}

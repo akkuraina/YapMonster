@@ -53,8 +53,8 @@ const formatTimestamp = (timestamp) => {
   });
 };
 
-const ScrollableChat = ({ messages }) => {
-  const { user } = ChatState();
+const ScrollableChat = ({ messages, socket }) => {
+  const { user, selectedChat } = ChatState();
   const [localMessages, setLocalMessages] = useState(messages);
   const chatContainerRef = useRef(null);
 
@@ -94,6 +94,13 @@ const ScrollableChat = ({ messages }) => {
           m._id === messageId ? { ...m, deletedForEveryone: true } : m
         )
       );
+      if (socket && selectedChat) {
+        socket.emit("delete message", {
+          chatId: selectedChat._id,
+          messageId,
+          forEveryone: true,
+        });
+      }
     } catch (err) {
       alert("Failed to delete message for everyone");
     }

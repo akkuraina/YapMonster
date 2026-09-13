@@ -1,7 +1,13 @@
 const mongoose = require("mongoose");
 const colors = require("colors");
 
-console.log(process.env.MONGO_URI); // Add this to verify the URI
+const dns = require("dns");
+try {
+  // Use public DNS servers (Google / Cloudflare) to reliably resolve MongoDB Atlas SRV records
+  dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+} catch (e) {
+  // Fallback gracefully if setServers is not permitted
+}
 
 const connectDB = async () => {
   if (!process.env.MONGO_URI) {
