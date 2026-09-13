@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -27,8 +27,80 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
   const [errorMsg, setErrorMsg] = useState("");
   const toast = useToast();
 
+  // ─── Diagnostic: run on every modal open ─────────────────────────────────
+  const runCameraDiagnostics = useCallback(async () => {
+    console.group("%c[YM VideoCall] Camera Diagnostics", "color:#7c3aed;font-weight:bold");
+
+    // 1. Permission state (before any prompt)
+    try {
+      const camPerm = await navigator.permissions.query({ name: "camera" });
+      const micPerm = await navigator.permissions.query({ name: "microphone" });
+      console.log("[DIAG] camera permission state:", camPerm.state);
+      console.log("[DIAG] microphone permission state:", micPerm.state);
+      camPerm.onchange = () => console.log("[DIAG] camera permission changed →", camPerm.state);
+    } catch (e) {
+      console.warn("[DIAG] navigator.permissions.query not supported:", e.message);
+    }
+
+    // 2. Enumerate devices — are there any video inputs at all?
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((d) => d.kind === "videoinput");
+      const audioInputs = devices.filter((d) => d.kind === "audioinput");
+      console.log(`[DIAG] video input devices found: ${videoInputs.length}`, videoInputs.map((d) => d.label || "(label hidden — grant perm first)"));
+      console.log(`[DIAG] audio input devices found: ${audioInputs.length}`, audioInputs.map((d) => d.label || "(label hidden — grant perm first)"));
+    } catch (e) {
+      console.error("[DIAG] enumerateDevices failed:", e);
+    }
+
+    // 3. Raw getUserMedia probe — this is the real gatekeeper
+    let stream = null;
+    try {
+      console.log("[DIAG] Attempting raw getUserMedia({ video: true, audio: true })...");
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const vTrack = stream.getVideoTracks()[0];
+      const aTrack = stream.getAudioTracks()[0];
+      console.log("%c[DIAG] getUserMedia SUCCEEDED", "color:green;font-weight:bold");
+      console.log("[DIAG] video track:", {
+        label: vTrack?.label,
+        readyState: vTrack?.readyState,
+        enabled: vTrack?.enabled,
+        muted: vTrack?.muted,
+        settings: vTrack?.getSettings?.(),
+      });
+      console.log("[DIAG] audio track:", {
+        label: aTrack?.label,
+        readyState: aTrack?.readyState,
+        enabled: aTrack?.enabled,
+      });
+    } catch (e) {
+      console.error("%c[DIAG] getUserMedia FAILED", "color:red;font-weight:bold", {
+        name: e.name,          // NotAllowedError | NotFoundError | NotReadableError | OverconstrainedError
+        message: e.message,
+        constraint: e.constraint, // populated for OverconstrainedError
+      });
+      // Map to plain-English diagnosis
+      const diagnosis = {
+        NotAllowedError: "Permission denied — user blocked camera or OS-level block is active.",
+        NotFoundError: "No camera device found — hardware missing or driver not loaded.",
+        NotReadableError: "Camera is in use by another application (Zoom, Teams, OBS, etc.).",
+        OverconstrainedError: `Resolution/constraints not supported by this device (constraint: ${e.constraint}).`,
+      }[e.name] || `Unknown error: ${e.name}`;
+      console.error("%c[DIAG] Diagnosis:", "color:red", diagnosis);
+    } finally {
+      // Always release the probe stream so LiveKit can acquire the device
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+        console.log("[DIAG] Probe stream released (tracks stopped).");
+      }
+    }
+
+    console.groupEnd();
+  }, []);
+
   useEffect(() => {
     if (isOpen && chatId && user) {
+      runCameraDiagnostics();
       fetchToken();
     } else {
       setToken("");
@@ -168,6 +240,39 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
                 data-lk-theme="default"
                 style={{ height: "100%", width: "100%" }}
                 onDisconnected={handleDisconnected}
+                onConnected={(room) => {
+                  console.group("%c[YM VideoCall] LiveKitRoom onConnected", "color:#7c3aed;font-weight:bold");
+                  console.log("[LK] room.state:", room.state);
+                  console.log("[LK] localParticipant.identity:", room.localParticipant?.identity);
+                  const camPub = room.localParticipant?.getTrackPublication?.('camera');
+                  const micPub = room.localParticipant?.getTrackPublication?.('microphone');
+                  console.log("[LK] camera publication (at connect):", camPub
+                    ? { isMuted: camPub.isMuted, isSubscribed: camPub.isSubscribed, trackSid: camPub.trackSid }
+                    : "NOT PUBLISHED"
+                  );
+                  console.log("[LK] microphone publication (at connect):", micPub
+                    ? { isMuted: micPub.isMuted, isSubscribed: micPub.isSubscribed, trackSid: micPub.trackSid }
+                    : "NOT PUBLISHED"
+                  );
+                  // Listen for future track publish events
+                  room.localParticipant?.on?.('trackPublished', (pub) => {
+                    console.log("%c[LK] localParticipant trackPublished", "color:green", {
+                      source: pub.source,
+                      trackSid: pub.trackSid,
+                      isMuted: pub.isMuted,
+                    });
+                  });
+                  room.localParticipant?.on?.('trackPublicationFailed', (err, track) => {
+                    console.error("%c[LK] trackPublicationFailed", "color:red;font-weight:bold", { err, track });
+                  });
+                  room.on?.('mediaDevicesError', (err) => {
+                    console.error("%c[LK] room mediaDevicesError", "color:red;font-weight:bold", {
+                      name: err.name,
+                      message: err.message,
+                    });
+                  });
+                  console.groupEnd();
+                }}
               >
                 <CustomVideoRoom />
               </LiveKitRoom>

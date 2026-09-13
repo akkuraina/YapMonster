@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   useTracks,
   VideoTrack,
   TrackRefContextIfNeeded,
   ControlBar,
   useLocalParticipant,
+  useRoomContext,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { Box, Flex, Text, Icon } from "@chakra-ui/react";
@@ -26,7 +27,7 @@ const VideoTile = ({ trackRef, isLocal }) => {
     <Box
       position="relative"
       w="100%"
-      aspectRatio="16/9"
+      style={{ aspectRatio: "16/9" }}
       bg="#0a0f1e"
       borderRadius="14px"
       overflow="hidden"
@@ -101,6 +102,7 @@ const VideoTile = ({ trackRef, isLocal }) => {
 const CustomVideoRoom = () => {
   const cameraTracks = useTracks([Track.Source.Camera]);
   const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
 
   const localTrack = cameraTracks.find(
     (t) => t.participant?.identity === localParticipant?.identity
@@ -108,6 +110,78 @@ const CustomVideoRoom = () => {
   const remoteTracks = cameraTracks.filter(
     (t) => t.participant?.identity !== localParticipant?.identity
   );
+
+  // ─── Diagnostic: log every time track list changes ───────────────────────
+  useEffect(() => {
+    console.group("%c[YM CustomVideoRoom] useTracks snapshot", "color:#0ea5e9;font-weight:bold");
+    console.log("[TRACKS] all camera tracks:", cameraTracks.map((t) => ({
+      identity: t.participant?.identity,
+      isLocal: t.participant?.identity === localParticipant?.identity,
+      source: t.source,
+      hasPub: !!t.publication,
+      pubSid: t.publication?.trackSid,
+      isMuted: t.publication?.isMuted,
+      isSubscribed: t.publication?.isSubscribed,
+      trackKind: t.publication?.track?.kind,
+      trackReadyState: t.publication?.track?.mediaStreamTrack?.readyState,
+      trackEnabled: t.publication?.track?.mediaStreamTrack?.enabled,
+    })));
+    console.log("[TRACKS] localTrack resolved:", localTrack
+      ? { identity: localTrack.participant?.identity, pubSid: localTrack.publication?.trackSid, isMuted: localTrack.publication?.isMuted }
+      : "NONE (local camera not in useTracks array)"
+    );
+    console.log("[TRACKS] remote tracks count:", remoteTracks.length);
+    console.groupEnd();
+  // eslint-disable-next-line
+  }, [cameraTracks.length, localTrack?.publication?.trackSid, localTrack?.publication?.isMuted]);
+
+  // ─── Diagnostic: room-level event listeners ───────────────────────────────
+  useEffect(() => {
+    if (!room) return;
+    const onLocalPublished = (pub, participant) => {
+      console.log("%c[LK ROOM] localTrackPublished", "color:green;font-weight:bold", {
+        source: pub.source,
+        trackSid: pub.trackSid,
+        isMuted: pub.isMuted,
+        participantIdentity: participant?.identity,
+        trackReadyState: pub.track?.mediaStreamTrack?.readyState,
+      });
+    };
+    const onLocalUnpublished = (pub, participant) => {
+      console.log("%c[LK ROOM] localTrackUnpublished", "color:orange", {
+        source: pub.source,
+        trackSid: pub.trackSid,
+        participantIdentity: participant?.identity,
+      });
+    };
+    const onLocalMuted = (pub) => {
+      console.log("[LK ROOM] localTrackMuted →", pub.source, { trackSid: pub.trackSid });
+    };
+    const onLocalUnmuted = (pub) => {
+      console.log("[LK ROOM] localTrackUnmuted →", pub.source, { trackSid: pub.trackSid });
+    };
+    const onMediaError = (err) => {
+      console.error("%c[LK ROOM] mediaDevicesError", "color:red;font-weight:bold", {
+        name: err.name,
+        message: err.message,
+        constraint: err.constraint,
+      });
+    };
+
+    room.on("localTrackPublished", onLocalPublished);
+    room.on("localTrackUnpublished", onLocalUnpublished);
+    room.on("trackMuted", onLocalMuted);
+    room.on("trackUnmuted", onLocalUnmuted);
+    room.on("mediaDevicesError", onMediaError);
+
+    return () => {
+      room.off("localTrackPublished", onLocalPublished);
+      room.off("localTrackUnpublished", onLocalUnpublished);
+      room.off("trackMuted", onLocalMuted);
+      room.off("trackUnmuted", onLocalUnmuted);
+      room.off("mediaDevicesError", onMediaError);
+    };
+  }, [room]);
 
   const totalParticipants = remoteTracks.length + (localTrack ? 1 : 0);
   const isOneOnOne = totalParticipants <= 2;
@@ -134,7 +208,7 @@ const CustomVideoRoom = () => {
             {remoteTracks.length === 0 ? (
               <Box flex="1" minW="0" minH="0">
                 <Flex
-                  aspectRatio="16/9"
+                  style={{ aspectRatio: "16/9" }}
                   bg="#0a0f1e"
                   borderRadius="14px"
                   border="1px solid rgba(255,255,255,0.08)"
