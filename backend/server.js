@@ -23,12 +23,71 @@ console.log("=============================");
 
 const app = express();
 
+// Helper to validate allowed origins
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  const cleanOrigin = origin.replace(/\/$/, "");
+
+  // Local development
+  if (
+    cleanOrigin === "http://localhost:3000" ||
+    cleanOrigin === "http://localhost:5000" ||
+    cleanOrigin === "http://127.0.0.1:3000" ||
+    cleanOrigin === "http://127.0.0.1:5000"
+  ) {
+    return true;
+  }
+
+  // Configured FRONTEND_URL in env
+  if (process.env.FRONTEND_URL) {
+    const cleanFrontendUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+    if (cleanOrigin === cleanFrontendUrl) {
+      return true;
+    }
+  }
+
+  // Allow Vercel & Render domains (e.g., https://yap-monster.vercel.app, https://yapmonster.vercel.app)
+  if (
+    /^https:\/\/([a-zA-Z0-9-]+\.)*vercel\.app$/.test(cleanOrigin) ||
+    /^https:\/\/([a-zA-Z0-9-]+\.)*onrender\.com$/.test(cleanOrigin)
+  ) {
+    return true;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return true;
+  }
+
+  return false;
+};
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, origin || true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+};
+
+// 1. CORS first for all routes & preflight OPTIONS
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// 2. Parsers & Logger
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(morgan("dev"));
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
-// Scoped rate limiters
+// 3. Scoped rate limiters
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -47,27 +106,7 @@ const apiLimiter = rateLimit({
 app.use("/api/user/login", authLimiter);
 app.use("/api", apiLimiter);
 
-// Dynamic allowed origins for CORS
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
-      return callback(null, origin);
-    }
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-};
-
 const livekitRoutes = require("./routes/livekitRoutes");
-
-app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/user", userRoutes);
@@ -96,11 +135,10 @@ const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
-        return callback(null, origin);
+      if (isAllowedOrigin(origin)) {
+        return callback(null, origin || true);
       }
-      return callback(new Error("Not allowed by CORS"));
+      return callback(null, false);
     },
     credentials: true,
   },
