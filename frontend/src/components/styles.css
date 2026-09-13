@@ -121,3 +121,101 @@ html, body, #root {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
 }
+
+/* ==========================================================================
+   LiveKit Video Call Desktop Framing & Aspect Ratio Fixes
+   ========================================================================== */
+
+/* Prevent over-zoomed video cropping on desktop and mobile */
+.lk-video-conference {
+  background-color: #0b1329 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.lk-video-conference-inner {
+  height: 100% !important;
+}
+
+.lk-participant-tile {
+  background-color: #0f172a !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure full camera frame is visible without zoom crop */
+.lk-participant-media-video,
+.lk-participant-tile video,
+.lk-video-container video,
+.lk-focus-layout video,
+.lk-grid-layout video,
+.lk-carousel-layout video {
+  object-fit: contain !important;
+  object-position: center !important;
+  background-color: #070d1e !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+/* Local participant selfie camera mirror */
+[data-lk-facing-mode='user'] .lk-participant-media-video[data-lk-local-participant='true'][data-lk-source='camera'],
+.lk-participant-media-video[data-lk-local-participant='true'][data-lk-source='camera'] {
+  transform: rotateY(180deg) !important;
+}
+
+/* Desktop video grid optimization */
+@media (min-width: 768px) {
+  .lk-grid-layout-wrapper,
+  .lk-focus-layout-wrapper {
+    padding: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .lk-grid-layout {
+    gap: 16px !important;
+    padding: 12px !important;
+    max-width: 1400px !important;
+    max-height: calc(100vh - 140px) !important;
+    margin: 0 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .lk-participant-tile {
+    max-height: calc(100vh - 160px) !important;
+  }
+}
+
+/* Custom LiveKit Control Bar Styling */
+.lk-control-bar {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 12px !important;
+  border-radius: 0 !important;
+}
+
+.lk-button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.lk-disconnect-button {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.lk-disconnect-button:hover {
+  background-color: #dc2626 !important;
+}
