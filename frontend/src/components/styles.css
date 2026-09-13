@@ -123,29 +123,16 @@ html, body, #root {
 }
 
 /* ==========================================================================
-   LiveKit Video Call Framing & Theme
+   LiveKit Dark Theme — minimal override (tile CSS handled in CustomVideoRoom)
    ========================================================================== */
 
-.lk-video-conference {
-  background-color: #0b1329 !important;
+/* Dark background for the room wrapper */
+[data-lk-theme] {
+  --lk-bg: #070d1e;
+  --lk-bg2: #0a1228;
 }
 
-.lk-participant-tile {
-  background-color: #0f172a !important;
-  border-radius: 16px !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-/* Ensure full camera framing is visible without zoom crop */
-.lk-participant-media-video,
-.lk-video-container video {
-  object-fit: contain !important;
-  object-position: center !important;
-  background-color: #070d1e !important;
-}
-
-/* Custom LiveKit Control Bar Styling */
+/* Custom Control Bar Styling */
 .lk-control-bar {
   background: rgba(15, 23, 42, 0.95) !important;
   backdrop-filter: blur(16px) !important;

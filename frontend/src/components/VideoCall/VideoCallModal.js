@@ -14,8 +14,9 @@ import {
   Button,
 } from "@chakra-ui/react";
 import { CloseIcon } from "@chakra-ui/icons";
-import { LiveKitRoom, VideoConference } from "@livekit/components-react";
+import { LiveKitRoom } from "@livekit/components-react";
 import "@livekit/components-styles";
+import CustomVideoRoom from "./CustomVideoRoom";
 import axios from "axios";
 import config from "../../config/config";
 
@@ -168,7 +169,7 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
                 style={{ height: "100%", width: "100%" }}
                 onDisconnected={handleDisconnected}
               >
-                <VideoConference />
+                <CustomVideoRoom />
               </LiveKitRoom>
             </Box>
           )}
