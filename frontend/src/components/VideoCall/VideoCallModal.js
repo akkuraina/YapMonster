@@ -19,8 +19,6 @@ import "@livekit/components-styles";
 import axios from "axios";
 import config from "../../config/config";
 
-import { VideoPresets } from "livekit-client";
-
 const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, socketRef }) => {
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
@@ -169,20 +167,6 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
                 data-lk-theme="default"
                 style={{ height: "100%", width: "100%" }}
                 onDisconnected={handleDisconnected}
-                options={{
-                  adaptiveStream: true,
-                  dynacast: true,
-                  publishDefaults: {
-                    videoSimulcastLayers: [
-                      VideoPresets.h720,
-                      VideoPresets.h360,
-                    ],
-                    videoCodec: "vp8",
-                  },
-                  videoCaptureDefaults: {
-                    resolution: VideoPresets.h720.resolution,
-                  },
-                }}
               >
                 <VideoConference />
               </LiveKitRoom>
