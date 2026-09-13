@@ -65,12 +65,15 @@ const corsOptions = {
   credentials: true,
 };
 
+const livekitRoutes = require("./routes/livekitRoutes");
+
 app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api/livekit", livekitRoutes);
 
 // Simple API response for root path
 app.get("/", (req, res) => {
@@ -145,6 +148,52 @@ io.on("connection", (socket) => {
       if (userId === senderId) return;
       socket.in(userId).emit("message received", newMessageReceived);
     });
+  });
+
+  // Video Calling Signaling
+  socket.on("call user", (callData) => {
+    const { chatId, caller, isGroupChat, chatName, users } = callData;
+    if (!chatId || !caller) return;
+
+    if (users && Array.isArray(users)) {
+      users.forEach((u) => {
+        const targetId = (u._id || u).toString();
+        const callerId = (caller._id || caller).toString();
+        if (targetId !== callerId) {
+          socket.in(targetId).emit("incoming call", {
+            chatId,
+            caller,
+            isGroupChat,
+            chatName,
+          });
+        }
+      });
+    } else {
+      socket.to(chatId).emit("incoming call", {
+        chatId,
+        caller,
+        isGroupChat,
+        chatName,
+      });
+    }
+  });
+
+  socket.on("answer call", ({ chatId, callerId, answerer }) => {
+    if (callerId) {
+      socket.in(callerId.toString()).emit("call answered", { chatId, answerer });
+    }
+  });
+
+  socket.on("reject call", ({ chatId, callerId, rejecter }) => {
+    if (callerId) {
+      socket.in(callerId.toString()).emit("call rejected", { chatId, rejecter });
+    }
+  });
+
+  socket.on("end call", ({ chatId, userId }) => {
+    if (chatId) {
+      socket.to(chatId).emit("call ended", { chatId, userId });
+    }
   });
 
   socket.on("disconnect", () => {

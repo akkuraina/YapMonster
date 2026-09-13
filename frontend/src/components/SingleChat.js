@@ -3,13 +3,16 @@ import { Input } from "@chakra-ui/input";
 import { Box, Text, Flex, VStack } from "@chakra-ui/layout";
 import { Avatar } from "@chakra-ui/avatar";
 import "./styles.css";
-import { IconButton, Spinner, useToast, Icon } from "@chakra-ui/react";
+import { IconButton, Spinner, useToast, Icon, Tooltip } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ArrowBackIcon, ChatIcon, ArrowForwardIcon } from "@chakra-ui/icons";
+import { FaVideo } from "react-icons/fa";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
+import VideoCallModal from "./VideoCall/VideoCallModal";
+import IncomingCallModal from "./VideoCall/IncomingCallModal";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
@@ -28,6 +31,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
+  const [videoCallData, setVideoCallData] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
   const toast = useToast();
   const socketRef = useRef();
   const selectedChatCompareRef = useRef();
@@ -220,16 +226,108 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       );
     });
 
+    socketRef.current.on("incoming call", (data) => {
+      console.log("Incoming call received:", data);
+      setIncomingCall(data);
+    });
+
+    socketRef.current.on("call rejected", (data) => {
+      toast({
+        title: "Call Declined",
+        description: `${data.rejecter?.name || "User"} declined the call.`,
+        status: "info",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+      setVideoCallOpen(false);
+    });
+
+    socketRef.current.on("call ended", (data) => {
+      toast({
+        title: "Call Ended",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      setVideoCallOpen(false);
+    });
+
     return () => {
       socketRef.current.off("connected");
       socketRef.current.off("typing");
       socketRef.current.off("stop typing");
       socketRef.current.off("message received");
       socketRef.current.off("message deleted");
+      socketRef.current.off("incoming call");
+      socketRef.current.off("call rejected");
+      socketRef.current.off("call ended");
       socketRef.current.off("connect_error");
     };
     // eslint-disable-next-line
   }, []);
+
+  const startVideoCall = () => {
+    if (!selectedChat) return;
+
+    const callPayload = {
+      chatId: selectedChat._id,
+      chatName: selectedChat.isGroupChat
+        ? selectedChat.chatName
+        : getSender(user, selectedChat.users),
+      isGroupChat: selectedChat.isGroupChat,
+    };
+
+    setVideoCallData(callPayload);
+    setVideoCallOpen(true);
+
+    if (socketRef.current) {
+      socketRef.current.emit("call user", {
+        chatId: selectedChat._id,
+        caller: user,
+        isGroupChat: selectedChat.isGroupChat,
+        chatName: selectedChat.isGroupChat ? selectedChat.chatName : user.name,
+        users: selectedChat.users,
+      });
+    }
+  };
+
+  const handleAcceptIncomingCall = () => {
+    if (!incomingCall) return;
+
+    const callPayload = {
+      chatId: incomingCall.chatId,
+      chatName: incomingCall.chatName,
+      isGroupChat: incomingCall.isGroupChat,
+    };
+
+    if (socketRef.current) {
+      socketRef.current.emit("answer call", {
+        chatId: incomingCall.chatId,
+        callerId: incomingCall.caller._id,
+        answerer: user,
+      });
+    }
+
+    setVideoCallData(callPayload);
+    setIncomingCall(null);
+    setVideoCallOpen(true);
+  };
+
+  const handleDeclineIncomingCall = () => {
+    if (!incomingCall) return;
+
+    if (socketRef.current) {
+      socketRef.current.emit("reject call", {
+        chatId: incomingCall.chatId,
+        callerId: incomingCall.caller._id,
+        rejecter: user,
+      });
+    }
+
+    setIncomingCall(null);
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -337,6 +435,24 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         bg="blue.600"
                       />
                       <Text>{selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}</Text>
+                      <Tooltip label="Start Video Call" placement="bottom">
+                        <IconButton
+                          icon={<FaVideo />}
+                          onClick={startVideoCall}
+                          bg="rgba(255, 255, 255, 0.2)"
+                          backdropFilter="blur(10px)"
+                          border="2px solid rgba(255, 255, 255, 0.3)"
+                          color="white"
+                          borderRadius="full"
+                          size="sm"
+                          _hover={{
+                            bg: "rgba(255, 255, 255, 0.35)",
+                            transform: "scale(1.08)",
+                            color: "green.300",
+                          }}
+                          aria-label="Start Video Call"
+                        />
+                      </Tooltip>
                       <ProfileModal
                         user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : user}
                         chatId={selectedChat._id}
@@ -354,6 +470,24 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         bg="purple.600"
                       />
                       <Text>{selectedChat.chatName?.toUpperCase() || "UNNAMED GROUP"}</Text>
+                      <Tooltip label="Start Group Video Call" placement="bottom">
+                        <IconButton
+                          icon={<FaVideo />}
+                          onClick={startVideoCall}
+                          bg="rgba(255, 255, 255, 0.2)"
+                          backdropFilter="blur(10px)"
+                          border="2px solid rgba(255, 255, 255, 0.3)"
+                          color="white"
+                          borderRadius="full"
+                          size="sm"
+                          _hover={{
+                            bg: "rgba(255, 255, 255, 0.35)",
+                            transform: "scale(1.08)",
+                            color: "green.300",
+                          }}
+                          aria-label="Start Group Video Call"
+                        />
+                      </Tooltip>
                       <UpdateGroupChatModal
                         fetchMessages={fetchMessages}
                         fetchAgain={fetchAgain}
@@ -504,6 +638,31 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             </Text>
           </VStack>
         </Box>
+      )}
+
+      {/* Video Call Modal */}
+      {videoCallData && (
+        <VideoCallModal
+          isOpen={videoCallOpen}
+          onClose={() => setVideoCallOpen(false)}
+          chatId={videoCallData.chatId}
+          chatName={videoCallData.chatName}
+          isGroupChat={videoCallData.isGroupChat}
+          user={user}
+          socketRef={socketRef}
+        />
+      )}
+
+      {/* Incoming Call Ringing Alert */}
+      {incomingCall && (
+        <IncomingCallModal
+          isOpen={!!incomingCall}
+          caller={incomingCall.caller}
+          chatName={incomingCall.chatName}
+          isGroupChat={incomingCall.isGroupChat}
+          onAccept={handleAcceptIncomingCall}
+          onDecline={handleDeclineIncomingCall}
+        />
       )}
     </>
   );
