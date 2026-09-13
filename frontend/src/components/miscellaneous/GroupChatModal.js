@@ -15,7 +15,6 @@ import {
   Box,
   Avatar,
   VStack,
-  HStack,
   Text,
   IconButton,
 } from "@chakra-ui/react";

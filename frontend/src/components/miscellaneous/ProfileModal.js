@@ -12,7 +12,6 @@ import {
   useDisclosure,
   IconButton,
   Text,
-  Image,
   Avatar,
   Input,
   FormControl,
@@ -21,7 +20,6 @@ import {
   HStack,
   useToast,
   Box,
-  Flex,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { ChatState } from "../../Context/ChatProvider";
@@ -43,7 +41,6 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
   const isOwnProfile = user?._id === currentUser?._id;
 
   // Chat background state (for personal chat context)
-  const [bgType, setBgType] = useState("color");
   const [bgColor, setBgColor] = useState("#f8fafc");
   const [bgLoading, setBgLoading] = useState(false);
   const [showBgPicker, setShowBgPicker] = useState(false);
@@ -56,10 +53,8 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
       const config_headers = { headers: { Authorization: `Bearer ${currentUser.token}` } };
       const { data } = await axios.get(`${config.BACKEND_URL}/api/user/chat-background/${chatId}`, config_headers);
       if (data) {
-        setBgType(data.type);
         if (data.type === "color") setBgColor(data.value);
       } else {
-        setBgType("color");
         setBgColor("#f8fafc");
       }
       setBgLoading(false);

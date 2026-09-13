@@ -5,12 +5,6 @@ import { Box, Text } from "@chakra-ui/layout";
 import { Menu, MenuButton, MenuList, MenuItem, IconButton } from "@chakra-ui/react";
 import { FiMoreVertical } from "react-icons/fi";
 import axios from "axios";
-import {
-  isLastMessage,
-  isSameSender,
-  isSameSenderMargin,
-  isSameUser,
-} from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
 
@@ -20,7 +14,6 @@ const formatTimestamp = (timestamp) => {
   
   const date = new Date(timestamp);
   const now = new Date();
-  const diffInHours = (now - date) / (1000 * 60 * 60);
   
   // If message is from today, show only time
   if (date.toDateString() === now.toDateString()) {

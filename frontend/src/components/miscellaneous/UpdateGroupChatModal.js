@@ -37,7 +37,6 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
   const [loading, setLoading] = useState(false);
   const [renameloading, setRenameLoading] = useState(false);
   const [groupPic, setGroupPic] = useState("");
-  const [picLoading, setPicLoading] = useState(false);
   const fileInputRef = useRef();
   const toast = useToast();
   const [bgType, setBgType] = useState("color");
@@ -115,51 +114,30 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
     setGroupChatName("");
   };
 
-  const handleUpdateGroupPic = async () => {
-    if (!groupPic) {
-      toast({
-        title: "Error",
-        description: "Please select an image first",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom",
-      });
-      return;
-    }
-
-    console.log("Updating group picture for chat:", selectedChat._id);
-    console.log("Group picture length:", groupPic.length);
-    console.log("Group picture preview:", groupPic.substring(0, 50) + "...");
+  const handleUpdateGroupPic = async (newPic) => {
+    if (!newPic) return;
 
     try {
-      setPicLoading(true);
       const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      
+
       const requestData = {
         chatId: selectedChat._id,
-        groupPic: groupPic,
+        groupPic: newPic,
       };
-      
-      console.log("Sending request to:", `${config.BACKEND_URL}/api/chat/update-picture`);
-      console.log("Request data:", requestData);
-      
+
       const { data } = await axios.put(
         `${config.BACKEND_URL}/api/chat/update-picture`,
         requestData,
         config_headers
       );
 
-      console.log("Response received:", data);
       setSelectedChat(data);
       setFetchAgain(!fetchAgain);
-      setPicLoading(false);
-      setGroupPic("");
-      
+
       toast({
         title: "Success",
         description: "Group picture updated successfully",
@@ -170,9 +148,6 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
       });
     } catch (error) {
       console.error("Error updating group picture:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to update group picture",
@@ -181,14 +156,12 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
         isClosable: true,
         position: "bottom",
       });
-      setPicLoading(false);
     }
   };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -201,8 +174,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
         return;
       }
 
-      // Check file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Invalid file type",
           description: "Please select an image file",
@@ -216,16 +188,13 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Compress the image if it's too large
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Calculate new dimensions (max 300x300)
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
           let { width, height } = img;
           const maxSize = 300;
-          
+
           if (width > height) {
             if (width > maxSize) {
               height = (height * maxSize) / width;
@@ -237,18 +206,14 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
               height = maxSize;
             }
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          
-          // Draw and compress
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          
-          console.log("Original size:", e.target.result.length);
-          console.log("Compressed size:", compressedDataUrl.length);
-          
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
           setGroupPic(compressedDataUrl);
+          handleUpdateGroupPic(compressedDataUrl);
         };
         img.src = e.target.result;
       };

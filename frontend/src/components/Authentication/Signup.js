@@ -6,7 +6,6 @@ import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { ChatState } from "../../Context/ChatProvider";
 import config from "../../config/config";
 
 const Signup = () => {
@@ -21,8 +20,6 @@ const Signup = () => {
   const [password, setPassword] = useState();
   const [pic, setPic] = useState();
   const [picLoading, setPicLoading] = useState(false);
-
-  const { setUser } = ChatState();
 
   const submitHandler = async () => {
     setPicLoading(true);
