@@ -11,9 +11,11 @@ const messageSchema = mongoose.Schema(
     replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
     messageType: {
       type: String,
-      enum: ["text", "call"],
+      enum: ["text", "call", "audio"],
       default: "text",
     },
+    audioUrl: { type: String }, // Base64 audio or URL
+    audioDuration: { type: Number, default: 0 }, // Duration in seconds
     callInfo: {
       callType: { type: String, enum: ["video", "audio"], default: "video" },
       status: {

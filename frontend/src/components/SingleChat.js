@@ -8,7 +8,7 @@ import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ArrowBackIcon, ArrowForwardIcon, CloseIcon } from "@chakra-ui/icons";
-import { FaVideo, FaComments, FaReply } from "react-icons/fa";
+import { FaVideo, FaComments, FaReply, FaMicrophone, FaTrash, FaStop } from "react-icons/fa";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import VideoCallModal from "./VideoCall/VideoCallModal";
@@ -35,6 +35,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [videoCallData, setVideoCallData] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
+
+  // Voice recording states & refs
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isSendingAudio, setIsSendingAudio] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioStreamRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingIntervalRef = useRef(null);
+  const isDiscardingRef = useRef(false);
+
   const toast = useToast();
   const socketRef = useRef();
   const selectedChatCompareRef = useRef();
@@ -145,6 +156,205 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setNewMessage(messageToSend);
     }
   };
+
+  const formatVoiceDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  // Start Voice Recording
+  const startVoiceRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        title: "Voice Recording Not Supported",
+        description: "Your browser does not support audio recording.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      isDiscardingRef.current = false;
+      audioChunksRef.current = [];
+      setRecordingDuration(0);
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+
+      let mimeType = "audio/webm";
+      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+        if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "audio/mp4";
+        } else if (MediaRecorder.isTypeSupported("audio/ogg")) {
+          mimeType = "audio/ogg";
+        } else {
+          mimeType = "";
+        }
+      }
+
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start(200);
+      setIsRecording(true);
+
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access to record voice messages.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Stop Recording and Send
+  const stopAndSendVoiceRecording = () => {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+      return;
+    }
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+
+    setIsSendingAudio(true);
+    const recorder = mediaRecorderRef.current;
+    const finalDuration = recordingDuration;
+
+    recorder.onstop = () => {
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((track) => track.stop());
+        audioStreamRef.current = null;
+      }
+
+      if (isDiscardingRef.current) {
+        setIsRecording(false);
+        setIsSendingAudio(false);
+        setRecordingDuration(0);
+        audioChunksRef.current = [];
+        return;
+      }
+
+      if (!audioChunksRef.current.length || finalDuration < 1) {
+        setIsRecording(false);
+        setIsSendingAudio(false);
+        setRecordingDuration(0);
+        return;
+      }
+
+      const mimeType = recorder.mimeType || "audio/webm";
+      const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result;
+        const replyToSend = replyingTo ? replyingTo._id : undefined;
+        setReplyingTo(null);
+
+        try {
+          const config_headers = {
+            headers: {
+              "Content-type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          };
+
+          const payload = {
+            chatId: selectedChat._id,
+            messageType: "audio",
+            audioUrl: base64Audio,
+            audioDuration: finalDuration,
+            content: "🎤 Voice message",
+          };
+          if (replyToSend) {
+            payload.replyTo = replyToSend;
+          }
+
+          const { data } = await axios.post(
+            `${config.BACKEND_URL}/api/message`,
+            payload,
+            config_headers
+          );
+
+          if (socketRef.current) {
+            socketRef.current.emit("new message", data);
+          }
+          setMessages((prev) => [...prev, data]);
+        } catch (error) {
+          toast({
+            title: "Voice Message Failed",
+            description: "Could not send voice message",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        } finally {
+          setIsRecording(false);
+          setIsSendingAudio(false);
+          setRecordingDuration(0);
+          audioChunksRef.current = [];
+        }
+      };
+    };
+
+    recorder.stop();
+  };
+
+  // Discard Recording
+  const discardVoiceRecording = () => {
+    isDiscardingRef.current = true;
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+    setIsRecording(false);
+    setIsSendingAudio(false);
+    setRecordingDuration(0);
+    audioChunksRef.current = [];
+    toast({
+      title: "Recording Discarded",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+      position: "bottom",
+    });
+  };
+
+  // Cleanup on unmount or chat switch
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, [selectedChat]);
 
   useEffect(() => {
     if (!socketRef.current) {
@@ -636,36 +846,236 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 borderRadius="full"
                 boxShadow="0 4px 20px rgba(0, 0, 0, 0.12)"
                 border="1px solid rgba(107, 70, 193, 0.25)"
-                p="3px"
+                p="4px"
+                minH="46px"
               >
-                <Input
-                  variant="unstyled"
-                  placeholder="Type your message in YapMonster..."
-                  value={newMessage}
-                  onChange={typingHandler}
-                  _placeholder={{ color: "gray.400", fontSize: "sm" }}
-                  color="gray.800"
-                  px={5}
-                  py={2.5}
-                  fontSize="sm"
-                  fontWeight="500"
-                />
-                <IconButton
-                  icon={<Icon as={ArrowForwardIcon} />}
-                  onClick={sendMessage}
-                  bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-                  color="white"
-                  borderRadius="full"
-                  size="sm"
-                  isDisabled={!newMessage.trim()}
-                  _hover={{
-                    transform: "scale(1.08)",
-                    boxShadow: "0 4px 14px rgba(90, 103, 216, 0.5)",
-                  }}
-                  _active={{ transform: "scale(0.96)" }}
-                  transition="all 0.2s ease-in-out"
-                  aria-label="Send message"
-                />
+                {!isRecording ? (
+                  <>
+                    <Input
+                      variant="unstyled"
+                      placeholder="Type your message in YapMonster..."
+                      value={newMessage}
+                      onChange={typingHandler}
+                      _placeholder={{ color: "gray.400", fontSize: "sm" }}
+                      color="gray.800"
+                      px={4}
+                      py={2}
+                      fontSize="sm"
+                      fontWeight="500"
+                    />
+
+                    {/* Voice Recording Icon immediately to the left side of Send */}
+                    <Tooltip
+                      label="Record voice message"
+                      placement="top"
+                      hasArrow
+                      bg="#0f172a"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="600"
+                      px={3}
+                      py={1.5}
+                      borderRadius="lg"
+                      boxShadow="0 8px 24px rgba(0, 0, 0, 0.4)"
+                      border="1px solid rgba(255, 255, 255, 0.1)"
+                    >
+                      <IconButton
+                        icon={<Icon as={FaMicrophone} boxSize={4} />}
+                        onClick={startVoiceRecording}
+                        variant="ghost"
+                        color="#6B46C1"
+                        bg="rgba(107, 70, 193, 0.08)"
+                        borderRadius="full"
+                        size="sm"
+                        mr={1.5}
+                        _hover={{
+                          bg: "rgba(107, 70, 193, 0.18)",
+                          color: "#553C9A",
+                          transform: "scale(1.08)",
+                        }}
+                        _active={{ transform: "scale(0.95)" }}
+                        transition="all 0.2s ease-in-out"
+                        aria-label="Record voice message"
+                      />
+                    </Tooltip>
+
+                    {/* Send Message Icon */}
+                    <Tooltip
+                      label="Send message"
+                      placement="top"
+                      hasArrow
+                      bg="#0f172a"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="600"
+                      px={3}
+                      py={1.5}
+                      borderRadius="lg"
+                      boxShadow="0 8px 24px rgba(0, 0, 0, 0.4)"
+                      border="1px solid rgba(255, 255, 255, 0.1)"
+                    >
+                      <IconButton
+                        icon={<Icon as={ArrowForwardIcon} />}
+                        onClick={sendMessage}
+                        bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                        color="white"
+                        borderRadius="full"
+                        size="sm"
+                        isDisabled={!newMessage.trim()}
+                        _disabled={{
+                          opacity: 0.5,
+                          cursor: "not-allowed",
+                          boxShadow: "none",
+                        }}
+                        _hover={{
+                          transform: newMessage.trim() ? "scale(1.08)" : "none",
+                          boxShadow: newMessage.trim() ? "0 4px 14px rgba(90, 103, 216, 0.5)" : "none",
+                        }}
+                        _active={{ transform: newMessage.trim() ? "scale(0.96)" : "none" }}
+                        transition="all 0.2s ease-in-out"
+                        aria-label="Send message"
+                      />
+                    </Tooltip>
+                  </>
+                ) : (
+                  <Flex align="center" justify="space-between" w="100%" px={2.5}>
+                    {/* Left: Live Recording Pulse, Timer & Wave Bars */}
+                    <Flex align="center" gap={2.5} flex="1">
+                      <Box
+                        w="10px"
+                        h="10px"
+                        borderRadius="full"
+                        bg="red.500"
+                        boxShadow="0 0 10px rgba(239, 68, 68, 0.8)"
+                      />
+                      <Text
+                        fontSize="xs"
+                        fontWeight="700"
+                        color="red.500"
+                        letterSpacing="0.03em"
+                        userSelect="none"
+                      >
+                        Recording {formatVoiceDuration(recordingDuration)}
+                      </Text>
+
+                      {/* Animated Soundwave bars */}
+                      <Flex align="center" gap="3px" h="14px" ml={1}>
+                        {[6, 12, 16, 10, 14, 8, 12].map((height, idx) => (
+                          <Box
+                            key={idx}
+                            w="2.5px"
+                            h={`${height}px`}
+                            bg="red.400"
+                            borderRadius="full"
+                          />
+                        ))}
+                      </Flex>
+                    </Flex>
+
+                    {/* Right Controls: Discard Icon, Stop/Send Icon (to immediate left of send), Send Button */}
+                    <Flex align="center" gap={1.5}>
+                      {/* Discard Icon */}
+                      <Tooltip
+                        label="Discard recording"
+                        placement="top"
+                        hasArrow
+                        bg="#0f172a"
+                        color="white"
+                        fontSize="xs"
+                        fontWeight="600"
+                        px={3}
+                        py={1.5}
+                        borderRadius="lg"
+                        boxShadow="0 8px 24px rgba(0, 0, 0, 0.4)"
+                        border="1px solid rgba(255, 255, 255, 0.1)"
+                      >
+                        <IconButton
+                          icon={<Icon as={FaTrash} boxSize={3.5} />}
+                          onClick={discardVoiceRecording}
+                          color="gray.400"
+                          _hover={{ color: "red.500", bg: "red.50", transform: "scale(1.08)" }}
+                          _active={{ transform: "scale(0.95)" }}
+                          variant="ghost"
+                          borderRadius="full"
+                          size="sm"
+                          aria-label="Discard recording"
+                        />
+                      </Tooltip>
+
+                      {/* Voice Recording Icon (Clicking again stops and sends) */}
+                      <Tooltip
+                        label="Stop & send voice message"
+                        placement="top"
+                        hasArrow
+                        bg="#0f172a"
+                        color="white"
+                        fontSize="xs"
+                        fontWeight="600"
+                        px={3}
+                        py={1.5}
+                        borderRadius="lg"
+                        boxShadow="0 8px 24px rgba(0, 0, 0, 0.4)"
+                        border="1px solid rgba(255, 255, 255, 0.1)"
+                      >
+                        <IconButton
+                          icon={
+                            isSendingAudio ? (
+                              <Spinner size="xs" color="white" />
+                            ) : (
+                              <Icon as={FaStop} boxSize={3.5} />
+                            )
+                          }
+                          onClick={stopAndSendVoiceRecording}
+                          bg="red.500"
+                          color="white"
+                          borderRadius="full"
+                          size="sm"
+                          _hover={{
+                            bg: "red.600",
+                            transform: "scale(1.08)",
+                            boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
+                          }}
+                          _active={{ transform: "scale(0.96)" }}
+                          transition="all 0.2s ease-in-out"
+                          isLoading={isSendingAudio}
+                          aria-label="Stop and send voice message"
+                        />
+                      </Tooltip>
+
+                      {/* Send Button */}
+                      <Tooltip
+                        label="Send voice message"
+                        placement="top"
+                        hasArrow
+                        bg="#0f172a"
+                        color="white"
+                        fontSize="xs"
+                        fontWeight="600"
+                        px={3}
+                        py={1.5}
+                        borderRadius="lg"
+                        boxShadow="0 8px 24px rgba(0, 0, 0, 0.4)"
+                        border="1px solid rgba(255, 255, 255, 0.1)"
+                      >
+                        <IconButton
+                          icon={<Icon as={ArrowForwardIcon} />}
+                          onClick={stopAndSendVoiceRecording}
+                          bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                          color="white"
+                          borderRadius="full"
+                          size="sm"
+                          _hover={{
+                            transform: "scale(1.08)",
+                            boxShadow: "0 4px 14px rgba(90, 103, 216, 0.5)",
+                          }}
+                          _active={{ transform: "scale(0.96)" }}
+                          isLoading={isSendingAudio}
+                          aria-label="Send voice message"
+                        />
+                      </Tooltip>
+                    </Flex>
+                  </Flex>
+                )}
               </Flex>
             </FormControl>
           </Box>

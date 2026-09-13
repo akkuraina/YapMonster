@@ -312,6 +312,17 @@ const MyChats = ({ fetchAgain }) => {
                             >
                               📹 {chat.latestMessage.content}
                             </Text>
+                          ) : chat.latestMessage.messageType === "audio" ? (
+                            <>
+                              <Text as="span" fontWeight="600">
+                                {chat.latestMessage.sender?._id === user._id
+                                  ? "You: "
+                                  : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
+                              </Text>
+                              {chat.latestMessage.deletedForEveryone
+                                ? "🚫 This message was deleted"
+                                : "🎤 Voice message"}
+                            </>
                           ) : (
                             <>
                               <Text as="span" fontWeight="600">

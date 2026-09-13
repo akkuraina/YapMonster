@@ -41,10 +41,14 @@ const allMessages = asyncHandler(async (req, res) => {
 //@route           POST /api/Message/
 //@access          Protected
 const sendMessage = asyncHandler(async (req, res) => {
-  const { content, chatId, replyTo } = req.body;
+  const { content, chatId, replyTo, messageType, audioUrl, audioDuration } = req.body;
 
-  if (!content || !chatId) {
-    return res.status(400).json({ message: "Content and chatId are required" });
+  if ((!content || !content.trim()) && !audioUrl) {
+    return res.status(400).json({ message: "Content or audioUrl is required" });
+  }
+
+  if (!chatId) {
+    return res.status(400).json({ message: "chatId is required" });
   }
 
   const chat = await Chat.findOne({
@@ -59,8 +63,11 @@ const sendMessage = asyncHandler(async (req, res) => {
 
   var newMessage = {
     sender: req.user._id,
-    content: content,
+    content: content || "🎤 Voice message",
     chat: chatId,
+    messageType: messageType || (audioUrl ? "audio" : "text"),
+    audioUrl: audioUrl || null,
+    audioDuration: audioDuration || 0,
   };
 
   if (replyTo) {

@@ -12,7 +12,7 @@ import {
   Button,
 } from "@chakra-ui/react";
 import { FiMoreVertical } from "react-icons/fi";
-import { FaReply, FaVideo, FaVideoSlash, FaPhoneSlash } from "react-icons/fa";
+import { FaReply, FaVideo, FaVideoSlash, FaPhoneSlash, FaPlay, FaPause } from "react-icons/fa";
 import axios from "axios";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
@@ -69,6 +69,144 @@ const formatCallDuration = (seconds) => {
   if (mins > 0 && secs > 0) return `${mins}m ${secs}s`;
   if (mins > 0) return `${mins}m`;
   return `${secs}s`;
+};
+
+// ─── Audio Message Player ───────────────────────────────────────────────────
+const AudioMessagePlayer = ({ audioUrl, initialDuration = 0, isSentByMe }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(initialDuration || 0);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [audioUrl]);
+
+  const togglePlay = (e) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.error("Audio playback error:", err);
+        });
+    }
+  };
+
+  const handleSeek = (e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const seekDuration = duration || initialDuration || 1;
+    const newTime = Math.max(0, Math.min(seekDuration, (clickX / width) * seekDuration));
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatSecs = (sec) => {
+    if (isNaN(sec) || !isFinite(sec) || sec <= 0) return "0:00";
+    const mins = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${mins}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  const totalTime = duration || initialDuration || 0;
+  const progressPercent = totalTime > 0 ? Math.min(100, (currentTime / totalTime) * 100) : 0;
+
+  return (
+    <Flex align="center" gap={3} minW={{ base: "190px", sm: "220px" }} py={0.5}>
+      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+
+      {/* Play / Pause button */}
+      <IconButton
+        icon={<Icon as={isPlaying ? FaPause : FaPlay} boxSize={3} ml={isPlaying ? 0 : 0.5} />}
+        onClick={togglePlay}
+        size="sm"
+        borderRadius="full"
+        bg={isSentByMe ? "rgba(255, 255, 255, 0.25)" : "purple.600"}
+        color="white"
+        _hover={{
+          bg: isSentByMe ? "rgba(255, 255, 255, 0.38)" : "purple.700",
+          transform: "scale(1.06)",
+        }}
+        _active={{ transform: "scale(0.95)" }}
+        aria-label={isPlaying ? "Pause voice message" : "Play voice message"}
+      />
+
+      {/* Seeker / Wave Progress */}
+      <Box flex="1" cursor="pointer" onClick={handleSeek}>
+        <Flex align="center" gap="2.5px" mb={1.5} h="16px">
+          {[4, 10, 14, 8, 12, 16, 9, 13, 6, 14, 11, 7, 15, 8, 12].map((height, i) => {
+            const barPercent = (i / 15) * 100;
+            const isPlayed = barPercent <= progressPercent;
+            return (
+              <Box
+                key={i}
+                w="2.5px"
+                h={`${height}px`}
+                borderRadius="full"
+                bg={
+                  isSentByMe
+                    ? isPlayed
+                      ? "white"
+                      : "rgba(255, 255, 255, 0.35)"
+                    : isPlayed
+                    ? "#6B46C1"
+                    : "gray.300"
+                }
+                transition="background-color 0.15s ease"
+              />
+            );
+          })}
+        </Flex>
+
+        <Flex justify="space-between" align="center">
+          <Text fontSize="2xs" fontWeight="700" color={isSentByMe ? "whiteAlpha.900" : "gray.700"}>
+            {isPlaying ? formatSecs(currentTime) : formatSecs(totalTime)}
+          </Text>
+          <Text fontSize="2xs" color={isSentByMe ? "whiteAlpha.75" : "gray.500"} fontWeight="600">
+            Voice Note
+          </Text>
+        </Flex>
+      </Box>
+    </Flex>
+  );
 };
 
 const ScrollableChat = ({ messages, socket, setReplyingTo, onStartVideoCall }) => {
@@ -546,6 +684,12 @@ const ScrollableChat = ({ messages, socket, setReplyingTo, onStartVideoCall }) =
                         <Text fontStyle="italic" color={isSentByMe ? "whiteAlpha.700" : "gray.400"} fontSize="xs">
                           🚫 This message was deleted
                         </Text>
+                      ) : m.messageType === "audio" && m.audioUrl ? (
+                        <AudioMessagePlayer
+                          audioUrl={m.audioUrl}
+                          initialDuration={m.audioDuration}
+                          isSentByMe={isSentByMe}
+                        />
                       ) : (
                         m.content
                       )}
