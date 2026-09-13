@@ -1,32 +1,35 @@
-import { AddIcon } from "@chakra-ui/icons";
-import { Box, Stack, Text, Button, useToast, useDisclosure, Flex, Input, Spinner, Avatar } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
+import { AddIcon, SearchIcon } from "@chakra-ui/icons";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-} from "@chakra-ui/modal";
+  Box,
+  Stack,
+  Text,
+  Button,
+  useToast,
+  Flex,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Avatar,
+  IconButton,
+  Menu as ChakraMenu,
+  MenuButton as ChakraMenuButton,
+  MenuList as ChakraMenuList,
+  MenuItem as ChakraMenuItem,
+} from "@chakra-ui/react";
+import { FiMoreVertical } from "react-icons/fi";
 import axios from "axios";
-import { useEffect, useState } from "react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
-import UserListItem from "./userAvatar/UserListItem";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
-  const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingChat, setLoadingChat] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [chatFilter, setChatFilter] = useState("");
 
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
-
   const toast = useToast();
 
   const fetchChats = async () => {
@@ -41,76 +44,32 @@ const MyChats = ({ fetchAgain }) => {
       setChats(data);
     } catch (error) {
       toast({
-        title: "Error Occured!",
-        description: "Failed to Load the chats",
+        title: "Error Loading Chats",
+        description: "Failed to fetch conversations",
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
         position: "bottom-left",
       });
     }
   };
 
-  const handleSearch = async () => {
-    if (!search) {
-      toast({
-        title: "Please Enter something to search",
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-        position: "top-left",
-      });
+  const deleteChatHandler = async (chatId, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this chat? This cannot be undone.")) {
       return;
     }
 
     try {
-      setLoading(true);
-      const config_headers = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-
-      const { data } = await axios.get(`${config.BACKEND_URL}/api/user?search=${search}`, config_headers);
-
-      setLoading(false);
-      setSearchResult(data);
-    } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Search Results",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom-left",
+      await axios.delete(`${config.BACKEND_URL}/api/chat/${chatId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
       });
-    }
-  };
-
-  const accessChat = async (userId) => {
-    try {
-      setLoadingChat(true);
-      const config_headers = {
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.post(`${config.BACKEND_URL}/api/chat`, { userId }, config_headers);
-
-      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-      setSelectedChat(data);
-      setLoadingChat(false);
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Error fetching the chat",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom-left",
-      });
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (selectedChat && selectedChat._id === chatId) setSelectedChat(null);
+      toast({ title: "Chat deleted", status: "success", duration: 2000, isClosable: true, position: "bottom" });
+    } catch (err) {
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (selectedChat && selectedChat._id === chatId) setSelectedChat(null);
     }
   };
 
@@ -120,321 +79,242 @@ const MyChats = ({ fetchAgain }) => {
     // eslint-disable-next-line
   }, [fetchAgain]);
 
+  const filteredChats = chats
+    ? chats.filter((chat) => {
+        const name = chat.isGroupChat
+          ? chat.chatName
+          : (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "");
+        return name.toLowerCase().includes(chatFilter.toLowerCase());
+      })
+    : [];
+
   return (
     <Box
       display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
       flexDir="column"
-      alignItems="center"
-      p={6}
-      bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-      w={{ base: "100%", md: "100%" }}
-      borderRadius="20px"
-      border="2px solid"
-      borderColor="purple.700"
-      overflow="hidden"
-      boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+      p={{ base: 3, md: 4 }}
+      bg="rgba(5, 11, 28, 0.88)"
+      backdropFilter="blur(24px)"
+      w="100%"
       h="100%"
+      borderRadius="24px"
+      overflow="hidden"
+      boxShadow="0 16px 45px rgba(0, 0, 0, 0.6)"
+      border="1px solid rgba(255, 255, 255, 0.08)"
+      position="relative"
     >
-      <Box
-        pb={4}
-        px={4}
-        fontSize={{ base: "2xl", md: "3xl" }}
-        fontFamily="'Poppins', sans-serif"
-        fontWeight="700"
-        display="flex"
-        w="100%"
-        overflow="hidden"
-        justifyContent="space-between"
-        alignItems="center"
-        color="white"
-        mb={4}
-      >
+      {/* Header Bar */}
+      <Flex justify="space-between" align="center" mb={3} px={1}>
         <Text
-          sx={{
-            background: "linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)"
-          }}
+          fontSize={{ base: "xl", md: "2xl" }}
+          fontWeight="800"
+          color="white"
+          fontFamily="'Plus Jakarta Sans', sans-serif"
+          letterSpacing="-0.02em"
         >
-          My Chats
+          Conversations
         </Text>
-        <Flex gap={2} alignItems="center">
-          <Button
-            display="flex"
-            fontSize={{ base: "sm", md: "md" }}
-            rightIcon={<AddIcon />}
-            bg="linear-gradient(135deg, #E6E6FA 0%, #D8BFD8 100%)"
-            backdropFilter="blur(10px)"
-            border="2px solid rgba(230, 230, 250, 0.5)"
-            color="#4A148C"
-            borderRadius="full"
-            px={4}
-            py={2}
-            h="40px"
-            mt={1}
-            fontWeight="600"
-            onClick={onOpen}
-            _hover={{ 
-              bg: "linear-gradient(135deg, #D8BFD8 0%, #DDA0DD 100%)",
-              transform: "translateY(-2px)",
-              boxShadow: "0 8px 25px rgba(230, 230, 250, 0.4)",
-              transition: "all 0.3s ease-in-out"
-            }}
-            transition="all 0.3s ease-in-out"
-          >
-            New Chat
-          </Button>
+
+        <Flex gap={2}>
           <GroupChatModal>
             <Button
-              display="flex"
-              fontSize={{ base: "sm", md: "md" }}
-              rightIcon={<AddIcon />}
-              bg="linear-gradient(135deg, #4A148C 0%, #6A0DAD 100%)"
-              backdropFilter="blur(10px)"
-              border="2px solid rgba(74, 20, 140, 0.5)"
+              size="sm"
+              leftIcon={<AddIcon />}
+              bg="rgba(255, 255, 255, 0.2)"
               color="white"
               borderRadius="full"
-              px={4}
-              py={2}
-              h="40px"
-              fontWeight="600"
-              _hover={{ 
-                bg: "linear-gradient(135deg, #6A0DAD 0%, #8B008B 100%)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 25px rgba(74, 20, 140, 0.4)",
-                transition: "all 0.3s ease-in-out"
+              px={3.5}
+              h="34px"
+              fontWeight="700"
+              fontSize="xs"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(255, 255, 255, 0.3)"
+              _hover={{
+                bg: "rgba(255, 255, 255, 0.32)",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
               }}
-              transition="all 0.3s ease-in-out"
+              _active={{ transform: "translateY(0)" }}
+              transition="all 0.2s ease"
             >
               New Group
             </Button>
           </GroupChatModal>
         </Flex>
-      </Box>
+      </Flex>
+
+      {/* Filter / Search Conversations Input */}
+      <InputGroup size="sm" mb={3}>
+        <InputLeftElement pointerEvents="none">
+          <SearchIcon color="rgba(255, 255, 255, 0.6)" />
+        </InputLeftElement>
+        <Input
+          placeholder="Filter chats..."
+          value={chatFilter}
+          onChange={(e) => setChatFilter(e.target.value)}
+          bg="rgba(255, 255, 255, 0.12)"
+          border="1px solid rgba(255, 255, 255, 0.18)"
+          color="white"
+          borderRadius="xl"
+          fontSize="xs"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.55)" }}
+          _focus={{
+            borderColor: "#63B3ED",
+            bg: "rgba(255, 255, 255, 0.18)",
+            boxShadow: "0 0 0 1px #63B3ED",
+          }}
+        />
+      </InputGroup>
+
+      {/* Chat List Container */}
       <Box
-        display="flex"
-        flexDir="column"
-        p={4}
-        bg="rgba(255, 255, 255, 0.1)"
-        backdropFilter="blur(10px)"
+        flex="1"
+        minH="0"
+        bg="rgba(255, 255, 255, 0.08)"
+        backdropFilter="blur(12px)"
         w="100%"
-        h="calc(100% - 120px)"
-        borderRadius="16px"
+        borderRadius="20px"
         overflow="hidden"
-        border="1px solid rgba(255, 255, 255, 0.2)"
-        boxShadow="inset 0 2px 8px rgba(0, 0, 0, 0.1)"
+        p={2.5}
+        border="1px solid rgba(255, 255, 255, 0.15)"
       >
         {chats ? (
-          <Stack 
-            overflowY="auto" 
-            spacing={3}
+          <Stack
+            overflowY="auto"
+            spacing={2}
             h="100%"
-            pr={2}
+            pr={1}
             css={{
-              '&::-webkit-scrollbar': {
-                width: '0px !important',
-                background: 'transparent !important',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent !important',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'transparent !important',
-              },
-              scrollbarWidth: 'none !important',
-              msOverflowStyle: 'none !important',
-              scrollBehavior: 'smooth',
+              "&::-webkit-scrollbar": { width: "0px !important" },
+              scrollbarWidth: "none !important",
             }}
           >
-            {chats.map((chat) => (
-              <Box
-                onClick={() => setSelectedChat(chat)}
-                cursor="pointer"
-                bg={selectedChat === chat ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.1)"}
-                color="white"
-                px={3}
-                py={2}
-                borderRadius="12px"
-                key={chat._id}
-                border="1px solid"
-                borderColor={selectedChat === chat ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.2)"}
-                _hover={{
-                  bg: "rgba(255, 255, 255, 0.2)",
-                  transform: "translateX(5px)",
-                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
-                  transition: "all 0.3s ease-in-out"
-                }}
-                transition="all 0.3s ease-in-out"
-                position="relative"
-                minH="60px"
-                maxH="80px"
-                overflow="hidden"
-                _before={{
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: selectedChat === chat 
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)"
-                    : "transparent",
-                  borderRadius: "12px",
-                  zIndex: -1
-                }}
-              >
-                <Flex alignItems="center" gap={2}>
-                  <Avatar
-                    size="sm"
-                    name={
-                      chat.isGroupChat 
-                        ? chat.chatName 
-                        : (chat.users && chat.users.length > 0 ? getSenderFull(loggedUser, chat.users)?.name || "Unknown User" : "Unknown User")
-                    }
-                    src={
-                      chat.isGroupChat 
-                        ? chat.groupPic 
-                        : (chat.users && chat.users.length > 0 ? getSenderFull(loggedUser, chat.users)?.pic || "" : "")
-                    }
-                    border="2px solid"
-                    borderColor="rgba(255, 255, 255, 0.3)"
-                    bg={chat.isGroupChat ? "purple.600" : "blue.600"}
-                    flexShrink="0"
-                  />
-                  <Box flex="1" minW="0" overflow="hidden">
-                    <Text
-                      fontWeight="600"
-                      fontSize="sm"
-                      mb={1}
-                      textShadow="0 1px 2px rgba(0, 0, 0, 0.3)"
-                      color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
-                      noOfLines={1}
-                      overflow="hidden"
-                      textOverflow="ellipsis"
-                    >
-                      {!chat.isGroupChat
-                        ? (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
-                        : (chat.chatName || "Unnamed Group")}
-                    </Text>
-                    {chat.latestMessage && (
-                      <Text 
-                        fontSize="xs" 
-                        opacity="0.8"
-                        lineHeight="1.3"
+            {filteredChats.map((chat) => {
+              const isSelected = selectedChat?._id === chat._id;
+              const chatTitle = !chat.isGroupChat
+                ? (chat.users && chat.users.length > 0 ? getSender(loggedUser, chat.users) : "Unknown User")
+                : (chat.chatName || "Unnamed Group");
+
+              const avatarPic = chat.isGroupChat
+                ? chat.groupPic
+                : (chat.users && chat.users.length > 0 ? getSenderFull(loggedUser, chat.users)?.pic : "");
+
+              return (
+                <Box
+                  key={chat._id}
+                  onClick={() => setSelectedChat(chat)}
+                  cursor="pointer"
+                  bg={isSelected ? "rgba(255, 255, 255, 0.95)" : "rgba(255, 255, 255, 0.12)"}
+                  color={isSelected ? "purple.900" : "white"}
+                  px={3}
+                  py={2.5}
+                  borderRadius="16px"
+                  border="1px solid"
+                  borderColor={isSelected ? "white" : "rgba(255, 255, 255, 0.12)"}
+                  boxShadow={isSelected ? "0 8px 24px rgba(0, 0, 0, 0.15)" : "none"}
+                  position="relative"
+                  transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+                  _hover={{
+                    bg: isSelected ? "white" : "rgba(255, 255, 255, 0.22)",
+                    transform: "translateX(3px)",
+                  }}
+                >
+                  {/* Left Active Accent Pill */}
+                  {isSelected && (
+                    <Box
+                      position="absolute"
+                      left="0"
+                      top="15%"
+                      bottom="15%"
+                      w="4px"
+                      bg="linear-gradient(180deg, #5A67D8 0%, #6B46C1 100%)"
+                      borderRadius="0 4px 4px 0"
+                    />
+                  )}
+
+                  <Flex align="center" gap={3}>
+                    <Avatar
+                      size="sm"
+                      name={chatTitle}
+                      src={avatarPic}
+                      border="2px solid"
+                      borderColor={isSelected ? "purple.400" : "rgba(255, 255, 255, 0.3)"}
+                      bg={chat.isGroupChat ? "purple.600" : "blue.600"}
+                      flexShrink={0}
+                    />
+
+                    <Box flex="1" minW="0" overflow="hidden">
+                      <Text
+                        fontWeight="700"
+                        fontSize="sm"
                         noOfLines={1}
-                        overflow="hidden"
-                        textOverflow="ellipsis"
+                        color={isSelected ? "gray.900" : "white"}
                       >
-                        <Text as="span" fontWeight="600">
-                          {chat.latestMessage.sender?.name || "Unknown"}:{" "}
-                        </Text>
-                        {chat.latestMessage.content && chat.latestMessage.content.length > 30
-                          ? chat.latestMessage.content.substring(0, 31) + "..."
-                          : chat.latestMessage.content}
+                        {chatTitle}
                       </Text>
-                    )}
-                  </Box>
-                </Flex>
-              </Box>
-            ))}
+
+                      {chat.latestMessage ? (
+                        <Text
+                          fontSize="xs"
+                          color={isSelected ? "gray.600" : "rgba(255, 255, 255, 0.75)"}
+                          noOfLines={1}
+                        >
+                          <Text as="span" fontWeight="600">
+                            {chat.latestMessage.sender?._id === user._id
+                              ? "You: "
+                              : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
+                          </Text>
+                          {chat.latestMessage.deletedForEveryone
+                            ? "🚫 This message was deleted"
+                            : chat.latestMessage.content}
+                        </Text>
+                      ) : (
+                        <Text fontSize="2xs" color={isSelected ? "gray.400" : "rgba(255, 255, 255, 0.5)"}>
+                          No messages yet. Start chatting!
+                        </Text>
+                      )}
+                    </Box>
+
+                    {/* Chat Options Menu */}
+                    <ChakraMenu placement="bottom-end">
+                      <ChakraMenuButton
+                        as={IconButton}
+                        aria-label="Chat options"
+                        icon={<FiMoreVertical />}
+                        size="xs"
+                        variant="ghost"
+                        color={isSelected ? "gray.600" : "whiteAlpha.800"}
+                        _hover={{ bg: isSelected ? "gray.100" : "rgba(255, 255, 255, 0.2)" }}
+                        onClick={(e) => e.stopPropagation()}
+                        borderRadius="full"
+                      />
+                      <ChakraMenuList
+                        bg="white"
+                        borderRadius="xl"
+                        boxShadow="0 8px 30px rgba(0, 0, 0, 0.15)"
+                        p={1.5}
+                        zIndex={2000}
+                      >
+                        <ChakraMenuItem
+                          color="red.500"
+                          borderRadius="lg"
+                          fontWeight="600"
+                          fontSize="xs"
+                          onClick={(e) => deleteChatHandler(chat._id, e)}
+                        >
+                          🗑️ Delete Chat
+                        </ChakraMenuItem>
+                      </ChakraMenuList>
+                    </ChakraMenu>
+                  </Flex>
+                </Box>
+              );
+            })}
           </Stack>
         ) : (
           <ChatLoading />
         )}
       </Box>
-
-      {/* New Chat Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay bg="rgba(0, 0, 0, 0.4)" backdropFilter="blur(4px)" />
-        <ModalContent 
-          bg="#E6E6FA"
-          borderRadius="20px"
-          boxShadow="0 20px 40px rgba(0, 0, 0, 0.15)"
-        >
-          <ModalHeader 
-            borderBottomWidth="2px" 
-            borderColor="purple.300"
-            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-            color="white"
-            fontSize="xl"
-            fontWeight="700"
-            fontFamily="'Poppins', sans-serif"
-            borderRadius="20px 20px 0 0"
-          >
-            New Chat
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody 
-            bg="#E6E6FA"
-            overflowY="auto"
-            maxH="400px"
-            css={{
-              '&::-webkit-scrollbar': {
-                width: '0px !important',
-                background: 'transparent !important',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent !important',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'transparent !important',
-              },
-              scrollbarWidth: 'none !important',
-              msOverflowStyle: 'none !important',
-              scrollBehavior: 'smooth',
-            }}
-          >
-            <Box display="flex" pb={4} gap={3}>
-              <Input
-                placeholder="Search by name or email"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                focusBorderColor="purple.500"
-                borderColor="purple.300"
-                borderRadius="lg"
-                bg="white"
-                boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
-                _focus={{
-                  boxShadow: "0 4px 16px rgba(90, 103, 216, 0.3)",
-                  transform: "translateY(-1px)",
-                  transition: "all 0.2s ease-in-out"
-                }}
-                transition="all 0.2s ease-in-out"
-              />
-              <Button 
-                onClick={handleSearch} 
-                bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-                color="white"
-                borderRadius="lg"
-                px={6}
-                fontWeight="600"
-                _hover={{
-                  bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)",
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 8px 25px rgba(90, 103, 216, 0.4)",
-                  transition: "all 0.2s ease-in-out"
-                }}
-                transition="all 0.2s ease-in-out"
-              >
-                Search
-              </Button>
-            </Box>
-            {loading ? (
-              <ChatLoading />
-            ) : (
-              searchResult?.map((user) => (
-                <UserListItem
-                  key={user._id}
-                  user={user}
-                  handleFunction={() => accessChat(user._id)}
-                />
-              ))
-            )}
-            {loadingChat && <Spinner ml="auto" display="flex" color="purple.600" />}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
     </Box>
   );
 };

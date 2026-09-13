@@ -5,23 +5,32 @@ const UserBadgeItem = ({ user, handleFunction, admin }) => {
   return (
     <Badge
       px={3}
-      py={2}
-      borderRadius="lg"
+      py={1.5}
+      borderRadius="full"
       m={1}
-      mb={2}
       variant="solid"
-      fontSize={14}
-      colorScheme="purple" /* Updated to purple theme */
-      size="sm"
+      fontSize="xs"
+      fontWeight="600"
       cursor="pointer"
       onClick={handleFunction}
-      bg="purple.500" /* Custom purple background */
-      color="white" /* White text for contrast */
-      _hover={{ bg: "purple.600" }} /* Darker purple on hover */
+      bg="rgba(90, 103, 216, 0.3)"
+      border="1px solid rgba(186, 230, 253, 0.35)"
+      color="#BAE6FD"
+      display="inline-flex"
+      alignItems="center"
+      gap={1.5}
+      _hover={{
+        bg: "rgba(239, 68, 68, 0.3)",
+        borderColor: "rgba(239, 68, 68, 0.6)",
+        color: "#FCA5A5",
+      }}
+      transition="all 0.2s ease"
     >
       <span>{user.name}</span>
-      {(admin?._id === user._id || admin === user._id) && <span> (Admin)</span>}
-      <CloseIcon pl={1} ml={2} cursor="pointer" />
+      {(admin?._id === user._id || admin === user._id) && (
+        <span style={{ fontSize: "10px", color: "#FCD34D", fontWeight: 700 }}> (Admin)</span>
+      )}
+      <CloseIcon w={2.5} h={2.5} ml={1} />
     </Badge>
   );
 };

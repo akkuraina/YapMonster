@@ -1,26 +1,28 @@
+import React, { useState } from "react";
 import { useDisclosure } from "@chakra-ui/hooks";
-import { Box, Text, Flex, Badge } from "@chakra-ui/layout";
+import { Box, Text, Flex, Badge, HStack, VStack } from "@chakra-ui/layout";
 import {
   Menu,
   MenuButton,
   MenuItem,
   MenuList,
 } from "@chakra-ui/menu";
-import { BellIcon } from "@chakra-ui/icons";
+import { BellIcon, SearchIcon } from "@chakra-ui/icons";
 import { Avatar } from "@chakra-ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/toast";
-import { getSender, getSenderFull } from "../../config/ChatLogics";
-import ProfileModal from "./ProfileModal";
-import { ChatState } from "../../Context/ChatProvider";
-import { Menu as ChakraMenu, MenuButton as ChakraMenuButton, MenuList as ChakraMenuList, MenuItem as ChakraMenuItem, IconButton } from "@chakra-ui/react";
-import { FiMoreVertical } from "react-icons/fi";
+import { IconButton, Button, Input, Spinner, Tooltip } from "@chakra-ui/react";
 import axios from "axios";
 import { Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton } from "@chakra-ui/react";
-import { HamburgerIcon } from "@chakra-ui/icons";
+import { getSender } from "../../config/ChatLogics";
+import ProfileModal from "./ProfileModal";
+import UserListItem from "../userAvatar/UserListItem";
+import ChatLoading from "../ChatLoading";
+import { ChatState } from "../../Context/ChatProvider";
+import YapMonsterWordmark from "../common/YapMonsterWordmark";
 import config from "../../config/config";
 
-// Custom Notification Badge Component
+// Notification Badge Component with subtle pulse
 const NotificationBadge = ({ count, children }) => {
   return (
     <Box position="relative" display="inline-block">
@@ -28,35 +30,20 @@ const NotificationBadge = ({ count, children }) => {
       {count > 0 && (
         <Badge
           position="absolute"
-          top="-8px"
-          right="-8px"
-          colorScheme="red"
+          top="-6px"
+          right="-6px"
+          bg="linear-gradient(135deg, #FF6B6B 0%, #EE5253 100%)"
+          color="white"
           borderRadius="full"
-          fontSize="xs"
+          fontSize="2xs"
           fontWeight="bold"
-          minW="22px"
-          h="22px"
+          minW="18px"
+          h="18px"
           display="flex"
           alignItems="center"
           justifyContent="center"
-          transform="scale(1)"
-          transition="all 0.3s ease-in-out"
-          _hover={{ 
-            transform: "scale(1.1)",
-            boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)"
-          }}
-          bg="linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)"
-          color="white"
-          border="2px solid white"
-          boxShadow="0 2px 8px rgba(0, 0, 0, 0.2)"
-          animation={count > 0 ? "pulse 2s infinite" : "none"}
-          sx={{
-            "@keyframes pulse": {
-              "0%": { transform: "scale(1)" },
-              "50%": { transform: "scale(1.05)" },
-              "100%": { transform: "scale(1)" }
-            }
-          }}
+          border="2px solid #5A67D8"
+          boxShadow="0 2px 6px rgba(238, 82, 83, 0.5)"
         >
           {count > 99 ? "99+" : count}
         </Badge>
@@ -66,8 +53,12 @@ const NotificationBadge = ({ count, children }) => {
 };
 
 function SideDrawer() {
+  const [search, setSearch] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingChat, setLoadingChat] = useState(false);
+
   const {
-    selectedChat,
     setSelectedChat,
     user,
     notification,
@@ -76,86 +67,169 @@ function SideDrawer() {
     setChats,
   } = ChatState();
 
-  // Debug: Log notification count changes
-  console.log("SideDrawer - Notification count:", notification.length);
-  console.log("SideDrawer - Notifications:", notification);
-
   const toast = useToast();
   const navigate = useNavigate();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
     navigate("/");
   };
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const handleSearch = async () => {
+    if (!search.trim()) {
+      toast({
+        title: "Search Term Required",
+        description: "Please enter a name or email to search",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top-left",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const config_headers = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const { data } = await axios.get(
+        `${config.BACKEND_URL}/api/user?search=${search}`,
+        config_headers
+      );
+
+      setLoading(false);
+      setSearchResult(data);
+    } catch (error) {
+      toast({
+        title: "Search Failed",
+        description: "Failed to load search results",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+      setLoading(false);
+    }
+  };
+
+  const accessChat = async (userId) => {
+    try {
+      setLoadingChat(true);
+      const config_headers = {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const { data } = await axios.post(
+        `${config.BACKEND_URL}/api/chat`,
+        { userId },
+        config_headers
+      );
+
+      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
+      setSelectedChat(data);
+      setLoadingChat(false);
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error fetching chat",
+        description: error.response?.data?.message || "Could not open conversation",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+      setLoadingChat(false);
+    }
+  };
 
   return (
     <>
-      {/* Top bar */}
+      {/* Top Header Bar */}
       <Box
-        bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+        bg="rgba(4, 9, 24, 0.92)"
+        backdropFilter="blur(20px)"
+        borderBottom="1px solid rgba(255, 255, 255, 0.08)"
         w="100%"
-        p={{ base: "10px 15px", md: "15px 30px" }}
-        borderBottom="3px solid"
-        borderColor="purple.700"
-        h={{ base: "70px", md: "90px" }}
-        boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
-        backdropFilter="blur(10px)"
+        px={{ base: 3, sm: 4, md: 6 }}
+        py={2.5}
+        h={{ base: "62px", md: "70px" }}
+        boxShadow="0 4px 25px rgba(0, 0, 0, 0.5)"
         position="relative"
-        zIndex={1000}
-        _before={{
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "linear-gradient(135deg, rgba(90, 103, 216, 0.9) 0%, rgba(107, 70, 193, 0.9) 100%)",
-          zIndex: -1,
-        }}
+        zIndex={100}
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
       >
-        <Flex alignItems="center" justifyContent="space-between" h="100%">
-          {/* Hamburger icon to open drawer */}
-          <IconButton
-            icon={<HamburgerIcon />}
-            variant="ghost"
-            colorScheme="whiteAlpha"
-            fontSize="2xl"
-            onClick={onOpen}
-            aria-label="Open menu"
-            mr={2}
-            _hover={{ bg: "purple.200" }}
-          />
-          {/* Notification icon on the left */}
-          <Menu>
-            <MenuButton 
-              p={3}
+        {/* Left Action: Search Users Trigger */}
+        <HStack spacing={2}>
+          <Tooltip label="Search users to chat" placement="bottom-start">
+            <Button
+              variant="ghost"
+              onClick={onOpen}
+              bg="rgba(255, 255, 255, 0.08)"
+              border="1px solid rgba(255, 255, 255, 0.12)"
+              color="white"
               borderRadius="full"
-              bg="rgba(255, 255, 255, 0.2)"
-              backdropFilter="blur(10px)"
-              border="2px solid rgba(255, 255, 255, 0.3)"
+              h={{ base: "36px", md: "40px" }}
+              px={{ base: 2.5, md: 4 }}
               _hover={{
-                bg: "rgba(255, 255, 255, 0.3)",
-                transform: "scale(1.05)",
-                transition: "all 0.2s ease-in-out"
+                bg: "rgba(255, 255, 255, 0.15)",
+                transform: "translateY(-1px)",
               }}
-              transition="all 0.2s ease-in-out"
+              _active={{ transform: "translateY(0)" }}
+              fontSize="xs"
+              fontWeight="600"
+              leftIcon={<SearchIcon />}
             >
-              <NotificationBadge count={notification.length}>
-                <BellIcon fontSize="2xl" color="white" />
-              </NotificationBadge>
-            </MenuButton>
-            <MenuList 
-              bg="white" 
-              borderRadius="xl"
-              boxShadow="0 20px 40px rgba(0, 0, 0, 0.15)"
+              <Text display={{ base: "none", md: "inline" }}>Search Users</Text>
+            </Button>
+          </Tooltip>
+        </HStack>
+
+        {/* Center: Signature Wordmark */}
+        <Flex align="center" justify="center" flex="1" mx={2}>
+          <YapMonsterWordmark size="lg" color="lightBlue" glow={true} />
+        </Flex>
+
+        {/* Right Actions: Notifications + Profile */}
+        <HStack spacing={{ base: 2, md: 3 }}>
+          {/* Notification Bell Menu */}
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              icon={
+                <NotificationBadge count={notification.length}>
+                  <BellIcon fontSize="xl" color="white" />
+                </NotificationBadge>
+              }
+              bg="rgba(255, 255, 255, 0.15)"
+              _hover={{ bg: "rgba(255, 255, 255, 0.25)", transform: "scale(1.05)" }}
+              _active={{ bg: "rgba(255, 255, 255, 0.3)" }}
+              borderRadius="full"
+              h={{ base: "36px", md: "40px" }}
+              w={{ base: "36px", md: "40px" }}
+              aria-label="Notifications"
+            />
+            <MenuList
+              bg="white"
+              borderRadius="2xl"
+              boxShadow="0 12px 35px rgba(0, 0, 0, 0.2)"
               border="none"
               p={2}
+              minW="260px"
+              zIndex={1000}
             >
               {!notification.length && (
-                <Text p={3} color="gray.500" fontSize="sm" textAlign="center">
-                  No New Messages
+                <Text p={4} color="gray.500" fontSize="xs" textAlign="center" fontWeight="500">
+                  🎉 No new notifications
                 </Text>
               )}
               {notification.map((notif) => (
@@ -165,252 +239,138 @@ function SideDrawer() {
                     setSelectedChat(notif.chat);
                     setNotification(notification.filter((n) => n !== notif));
                   }}
-                  borderRadius="lg"
+                  borderRadius="xl"
                   mb={1}
-                  _hover={{
-                    bg: "purple.100",
-                    transform: "translateX(5px)",
-                    transition: "all 0.2s ease-in-out"
-                  }}
-                  transition="all 0.2s ease-in-out"
+                  p={3}
+                  _hover={{ bg: "purple.50", color: "purple.700" }}
+                  fontSize="xs"
+                  fontWeight="600"
                 >
                   {notif.chat.isGroupChat
-                    ? `New Message in ${notif.chat.chatName}`
-                    : `New Message from ${getSender(user, notif.chat.users)}`}
+                    ? `💬 New in ${notif.chat.chatName}`
+                    : `💬 New from ${getSender(user, notif.chat.users)}`}
                 </MenuItem>
               ))}
             </MenuList>
           </Menu>
 
-          {/* Centered Name */}
-          <Flex direction="column" align="center" justify="center" flex="1">
-            <Text
-              fontSize={{ base: "2xl", md: "4xl", lg: "5xl" }}
-              fontFamily="'Poppins', sans-serif"
-              fontWeight="800"
-              letterSpacing="tight"
-              textAlign="center"
-              sx={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                textShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-                filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))"
-              }}
+          {/* Profile Dropdown */}
+          <Menu>
+            <MenuButton
+              as={Box}
+              cursor="pointer"
+              borderRadius="full"
+              p="2px"
+              transition="all 0.2s ease"
+              _hover={{ transform: "scale(1.08)", boxShadow: "0 0 12px rgba(255, 255, 255, 0.5)" }}
             >
-              YapMonster
-            </Text>
-          </Flex>
-
-          {/* Profile and logout section on the right */}
-          <Flex alignItems="center">
-            {/* Profile Menu */}
-            <Menu>
-              <MenuButton
-                as={Box}
-                border="none"
-                bg="transparent"
-                p={0}
-                m={0}
-                borderRadius="full"
-                cursor="pointer"
-                _hover={{ transform: "scale(1.15)", boxShadow: "0 4px 16px rgba(90, 103, 216, 0.25)" }}
-                transition="all 0.2s cubic-bezier(.4,2,.6,1)"
-                aria-label="Open profile menu"
-                id="profile-avatar-btn"
-              >
-                <Avatar
-                  size="lg"
-                  name={user.name}
-                  src={user.pic}
-                  border="2px solid white"
-                  boxShadow="0 4px 12px rgba(0, 0, 0, 0.2)"
-                  objectFit="cover"
-                  borderRadius="full"
-                  pointerEvents="none"
-                />
-              </MenuButton>
-              <MenuList 
-                bg="white" 
-                borderRadius="xl"
-                boxShadow="0 8px 32px rgba(90, 103, 216, 0.18)"
-                border="none"
-                p={2}
-                zIndex={9999}
-              >
-                <ProfileModal user={user}>
-                  <MenuItem
-                    w="100%"
-                    justifyContent="flex-start"
-                    borderRadius="md"
-                    fontWeight="600"
-                    color="purple.700"
-                    _hover={{ bg: "purple.50" }}
-                    mb={1}
-                  >
-                    My Profile
-                  </MenuItem>
-                </ProfileModal>
+              <Avatar
+                size="sm"
+                name={user?.name}
+                src={user?.pic}
+                border="2px solid white"
+                bg="purple.700"
+              />
+            </MenuButton>
+            <MenuList
+              bg="white"
+              borderRadius="2xl"
+              boxShadow="0 12px 35px rgba(90, 103, 216, 0.2)"
+              border="none"
+              p={2}
+              minW="200px"
+              zIndex={1000}
+            >
+              <ProfileModal user={user}>
                 <MenuItem
-                  w="100%"
-                  justifyContent="flex-start"
-                  borderRadius="md"
+                  borderRadius="xl"
                   fontWeight="600"
-                  color="red.500"
-                  _hover={{ bg: "red.50" }}
-                  onClick={logoutHandler}
+                  fontSize="sm"
+                  color="gray.700"
+                  _hover={{ bg: "purple.50", color: "purple.700" }}
+                  mb={1}
                 >
-                  Logout
+                  👤 My Profile
                 </MenuItem>
-              </MenuList>
-            </Menu>
-          </Flex>
-        </Flex>
+              </ProfileModal>
+              <MenuItem
+                borderRadius="xl"
+                fontWeight="600"
+                fontSize="sm"
+                color="red.500"
+                _hover={{ bg: "red.50" }}
+                onClick={logoutHandler}
+              >
+                🚪 Sign Out
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </HStack>
       </Box>
-      {/* Drawer for chats */}
-      <Drawer placement="left" onClose={onClose} isOpen={isOpen} size="xs">
-        <DrawerOverlay />
-        <DrawerContent bgGradient="linear(to-b, #5A67D8, #6B46C1)">
+
+      {/* User Search Drawer */}
+      <Drawer placement="left" onClose={onClose} isOpen={isOpen} size="sm">
+        <DrawerOverlay bg="rgba(0, 0, 0, 0.75)" backdropFilter="blur(8px)" />
+        <DrawerContent bg="linear-gradient(180deg, #020617 0%, #080d24 100%)" color="white" borderRight="1px solid rgba(255, 255, 255, 0.08)">
           <DrawerCloseButton color="white" />
-          <DrawerHeader color="white" fontWeight="bold" fontSize="2xl" borderBottom="1px solid #6B46C1">
-            Chats
+          <DrawerHeader borderBottom="1px solid rgba(255, 255, 255, 0.08)" py={4}>
+            <Text fontSize="lg" fontWeight="700" fontFamily="'Plus Jakarta Sans', sans-serif">
+              Find Users to Chat
+            </Text>
           </DrawerHeader>
-          <DrawerBody p={0}>
-            <Box w="100%" h="100%" overflowY="auto" p={2}>
-              {chats.map((chat) => (
-                <Box
-                  onClick={() => { setSelectedChat(chat); onClose(); }}
-                  cursor="pointer"
-                  bg={selectedChat === chat ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.1)"}
-                  color="white"
-                  px={3}
-                  py={2}
-                  borderRadius="12px"
-                  key={chat._id}
-                  border="1px solid"
-                  borderColor={selectedChat === chat ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.2)"}
-                  _hover={{
-                    bg: "rgba(255, 255, 255, 0.2)",
-                    transform: "translateX(5px)",
-                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
-                    transition: "all 0.3s ease-in-out"
-                  }}
-                  transition="all 0.3s ease-in-out"
-                  position="relative"
-                  minH="60px"
-                  maxH="80px"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: selectedChat === chat 
-                      ? "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)"
-                      : "transparent",
-                    borderRadius: "12px",
-                    zIndex: -1
-                  }}
-                >
-                  <Flex alignItems="center" gap={2}>
-                    <Avatar
-                      size="sm"
-                      name={
-                        chat.isGroupChat 
-                          ? chat.chatName 
-                          : (chat.users && chat.users.length > 0 ? getSenderFull(user, chat.users)?.name || "Unknown User" : "Unknown User")
-                      }
-                      src={
-                        chat.isGroupChat 
-                          ? chat.groupPic 
-                          : (chat.users && chat.users.length > 0 ? getSenderFull(user, chat.users)?.pic || "" : "")
-                      }
-                      border="2px solid"
-                      borderColor="rgba(255, 255, 255, 0.3)"
-                      bg={chat.isGroupChat ? "purple.600" : "blue.600"}
-                      flexShrink="0"
-                    />
-                    <Box flex="1" minW="0" overflow="hidden">
-                      <Text
-                        fontWeight="600"
-                        fontSize="sm"
-                        mb={1}
-                        textShadow="0 1px 2px rgba(0, 0, 0, 0.3)"
-                        color={chat.isGroupChat ? "#4A148C" : "#E6E6FA"}
-                        noOfLines={1}
-                        overflow="hidden"
-                        textOverflow="ellipsis"
-                      >
-                        {!chat.isGroupChat
-                          ? (chat.users && chat.users.length > 0 ? getSender(user, chat.users) : "Unknown User")
-                          : (chat.chatName || "Unnamed Group")}
-                      </Text>
-                      {chat.latestMessage && (
-                        <Text 
-                          fontSize="xs" 
-                          opacity="0.8"
-                          lineHeight="1.3"
-                          noOfLines={1}
-                          overflow="hidden"
-                          textOverflow="ellipsis"
-                        >
-                          <Text as="span" fontWeight="600">
-                            {chat.latestMessage.sender?.name || "Unknown"}:{" "}
-                          </Text>
-                          {chat.latestMessage.content && chat.latestMessage.content.length > 30
-                            ? chat.latestMessage.content.substring(0, 31) + "..."
-                            : chat.latestMessage.content}
-                        </Text>
-                      )}
-                    </Box>
-                    {/* Three-dots menu for deleting chat */}
-                    <ChakraMenu placement="bottom-end">
-                      <ChakraMenuButton
-                        as={IconButton}
-                        aria-label="Chat options"
-                        icon={<FiMoreVertical />}
-                        size="xs"
-                        variant="ghost"
-                        ml={1}
-                        _hover={{ bg: "purple.100" }}
-                        _active={{ bg: "purple.200" }}
-                        onClick={e => e.stopPropagation()}
-                      />
-                      <ChakraMenuList zIndex={2000} minW="140px">
-                        <ChakraMenuItem
-                          color="red.500"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (window.confirm("Are you sure you want to delete this chat? This cannot be undone.")) {
-                              try {
-                                await axios.delete(`${config.BACKEND_URL}/api/chat/${chat._id}`, {
-                                  headers: { Authorization: `Bearer ${user.token}` }
-                                });
-                                setChats(prev => prev.filter(c => c._id !== chat._id));
-                                if (selectedChat && selectedChat._id === chat._id) setSelectedChat(null);
-                                toast({ title: "Chat deleted", status: "success", duration: 2000, isClosable: true, position: "bottom" });
-                              } catch (err) {
-                                if (err.response && err.response.status === 404) {
-                                  setChats(prev => prev.filter(c => c._id !== chat._id));
-                                  if (selectedChat && selectedChat._id === chat._id) setSelectedChat(null);
-                                  toast({ title: "Chat already deleted", status: "info", duration: 2000, isClosable: true, position: "bottom" });
-                                } else {
-                                  toast({ title: "Failed to delete chat", status: "error", duration: 3000, isClosable: true, position: "bottom" });
-                                }
-                              }
-                            }
-                          }}
-                        >
-                          Delete Chat
-                        </ChakraMenuItem>
-                      </ChakraMenuList>
-                    </ChakraMenu>
-                  </Flex>
-                </Box>
-              ))}
-            </Box>
+
+          <DrawerBody p={4}>
+            <Flex gap={2} mb={5}>
+              <Input
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                bg="rgba(255, 255, 255, 0.08)"
+                border="1px solid rgba(255, 255, 255, 0.15)"
+                color="white"
+                borderRadius="xl"
+                fontSize="sm"
+                _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                _focus={{
+                  borderColor: "#63B3ED",
+                  boxShadow: "0 0 0 1px #63B3ED",
+                }}
+              />
+              <Button
+                onClick={handleSearch}
+                isLoading={loading}
+                bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                color="white"
+                borderRadius="xl"
+                px={5}
+                fontWeight="700"
+                fontSize="sm"
+                _hover={{ filter: "brightness(1.1)" }}
+              >
+                Go
+              </Button>
+            </Flex>
+
+            {loading ? (
+              <ChatLoading />
+            ) : (
+              <VStack spacing={2} align="stretch">
+                {searchResult.map((u) => (
+                  <UserListItem
+                    key={u._id}
+                    user={u}
+                    handleFunction={() => accessChat(u._id)}
+                  />
+                ))}
+              </VStack>
+            )}
+
+            {loadingChat && (
+              <Flex justify="center" mt={4}>
+                <Spinner size="md" color="purple.400" />
+              </Flex>
+            )}
           </DrawerBody>
         </DrawerContent>
       </Drawer>

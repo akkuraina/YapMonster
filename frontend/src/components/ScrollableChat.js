@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "@chakra-ui/avatar";
 import { Tooltip } from "@chakra-ui/tooltip";
-import { Box, Text } from "@chakra-ui/layout";
+import { Box, Text, Flex } from "@chakra-ui/layout";
 import { Menu, MenuButton, MenuList, MenuItem, IconButton } from "@chakra-ui/react";
 import { FiMoreVertical } from "react-icons/fi";
 import axios from "axios";
@@ -11,39 +11,39 @@ import config from "../config/config";
 // Helper function to format timestamp
 const formatTimestamp = (timestamp) => {
   if (!timestamp) return "";
-  
+
   const date = new Date(timestamp);
   const now = new Date();
-  
+
   // If message is from today, show only time
   if (date.toDateString() === now.toDateString()) {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   }
-  
-  // If message is from yesterday, show "Yesterday" and time
+
+  // If message is from yesterday
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday ${date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
+    return `Yesterday ${date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     })}`;
   }
-  
-  // If message is older, show date and time
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric' 
-  }) + ' ' + date.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  });
+
+  // Older messages
+  return `${date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })} ${date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })}`;
 };
 
 const ScrollableChat = ({ messages, socket }) => {
@@ -51,8 +51,8 @@ const ScrollableChat = ({ messages, socket }) => {
   const [localMessages, setLocalMessages] = useState(messages);
   const chatContainerRef = useRef(null);
 
-  // Update localMessages if messages prop changes
-  React.useEffect(() => {
+  // Update localMessages when messages prop changes
+  useEffect(() => {
     setLocalMessages(messages);
   }, [messages]);
 
@@ -72,7 +72,7 @@ const ScrollableChat = ({ messages, socket }) => {
       );
       setLocalMessages((prev) => prev.filter((m) => m._id !== messageId));
     } catch (err) {
-      alert("Failed to delete message for you");
+      console.error("Failed to delete message for me", err);
     }
   };
 
@@ -95,7 +95,7 @@ const ScrollableChat = ({ messages, socket }) => {
         });
       }
     } catch (err) {
-      alert("Failed to delete message for everyone");
+      console.error("Failed to delete message for everyone", err);
     }
   };
 
@@ -104,143 +104,194 @@ const ScrollableChat = ({ messages, socket }) => {
       ref={chatContainerRef}
       display="flex"
       flexDirection="column"
-      gap="8px"
-      padding="10px"
+      gap="10px"
+      px={{ base: 1, sm: 2 }}
+      py={2}
       height="100%"
       flex="1"
+      minH="0"
       overflowY="auto"
       overflowX="hidden"
       css={{
-        '&::-webkit-scrollbar': {
-          width: '0px !important',
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'transparent !important',
-        },
-        scrollbarWidth: 'none !important',
-        msOverflowStyle: 'none !important',
-        scrollBehavior: 'smooth',
+        "&::-webkit-scrollbar": { width: "0px !important" },
+        scrollbarWidth: "none !important",
       }}
     >
       {localMessages &&
-        localMessages.map((m, i) => {
+        localMessages.map((m) => {
           // Hide if deleted for me
           if (m.deletedFor && m.deletedFor.includes(user._id)) return null;
+
+          const isSentByMe = m.sender._id === user._id;
+
           return (
-            <Box
+            <Flex
               key={m._id}
-              display="flex"
-              alignItems="flex-start"
-              justifyContent={m.sender._id === user._id ? "flex-end" : "flex-start"}
-              width="100%"
+              align="flex-end"
+              justify={isSentByMe ? "flex-end" : "flex-start"}
+              w="100%"
+              gap={2}
+              role="group"
               position="relative"
             >
-              {m.sender._id !== user._id && (
+              {/* Receiver Avatar (in group or 1-on-1) */}
+              {!isSentByMe && (
                 <Tooltip
-                  label={m.sender?.name || "Unknown User"}
+                  label={m.sender?.name || "User"}
                   placement="bottom-start"
                   hasArrow
                   bg="purple.700"
                   color="white"
                 >
                   <Avatar
-                    mt="7px"
-                    mr={2}
-                    size="sm"
+                    size="xs"
+                    mb={1}
                     cursor="pointer"
-                    name={m.sender?.name || "Unknown"}
+                    name={m.sender?.name || "User"}
                     src={m.sender?.pic}
                     bg="purple.600"
+                    border="1.5px solid white"
                   />
                 </Tooltip>
               )}
+
+              {/* Message Bubble Container */}
               <Box
+                maxW={{ base: "82%", md: "72%" }}
+                position="relative"
                 display="flex"
                 flexDirection="column"
-                alignItems={m.sender._id === user._id ? "flex-end" : "flex-start"}
-                maxWidth="70%"
-                position="relative"
+                alignItems={isSentByMe ? "flex-end" : "flex-start"}
               >
-                <Box display="flex" alignItems="center">
-                  <Box
-                    backgroundColor={m.sender._id === user._id ? "#5A67D8" : "#6B46C1"}
-                    color="white"
-                    padding="8px 16px"
-                    borderRadius="18px"
-                    fontSize="14px"
-                    boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
-                    wordBreak="break-word"
-                    overflowWrap="break-word"
-                    mb="2px"
-                    minWidth="40px"
+                {/* Sender Name for group chats if received */}
+                {!isSentByMe && selectedChat?.isGroupChat && (
+                  <Text
+                    fontSize="2xs"
+                    fontWeight="700"
+                    color="purple.700"
+                    ml={1}
+                    mb={0.5}
                   >
-                    {m.deletedForEveryone ? (
-                      <Text fontStyle="italic" color="gray.300">This message was deleted</Text>
-                    ) : (
-                      m.content || "Empty message"
-                    )}
-                  </Box>
-                  {/* Three dots menu */}
-                  {!m.deletedForEveryone && (
-                    <Menu placement="bottom-end">
+                    {m.sender?.name || "User"}
+                  </Text>
+                )}
+
+                <Flex align="center" gap={1}>
+                  {/* Left Menu for Sent Messages */}
+                  {isSentByMe && !m.deletedForEveryone && (
+                    <Menu placement="left-start">
                       <MenuButton
                         as={IconButton}
                         aria-label="Options"
                         icon={<FiMoreVertical />}
                         size="xs"
                         variant="ghost"
-                        ml={1}
-                        _hover={{ bg: "purple.100" }}
-                        _active={{ bg: "purple.200" }}
+                        color="gray.400"
+                        opacity={0}
+                        _groupHover={{ opacity: 1 }}
+                        _hover={{ bg: "rgba(0, 0, 0, 0.08)", color: "gray.700" }}
+                        borderRadius="full"
+                        transition="opacity 0.2s ease"
                       />
-                      <MenuList zIndex={2000} minW="140px">
-                        <MenuItem onClick={() => handleDeleteForMe(m._id)}>
-                          Delete for me
+                      <MenuList zIndex={2000} minW="150px" p={1.5} borderRadius="xl" boxShadow="0 8px 30px rgba(0,0,0,0.15)">
+                        <MenuItem
+                          borderRadius="lg"
+                          fontSize="xs"
+                          fontWeight="600"
+                          onClick={() => handleDeleteForMe(m._id)}
+                        >
+                          Delete for Me
                         </MenuItem>
-                        {(m.sender._id === user._id || user.isAdmin) && (
-                          <MenuItem color="red.500" onClick={() => handleDeleteForEveryone(m._id)}>
-                            Delete for everyone
-                          </MenuItem>
-                        )}
+                        <MenuItem
+                          borderRadius="lg"
+                          fontSize="xs"
+                          fontWeight="600"
+                          color="red.500"
+                          onClick={() => handleDeleteForEveryone(m._id)}
+                        >
+                          Delete for Everyone
+                        </MenuItem>
                       </MenuList>
                     </Menu>
                   )}
-                </Box>
-                <Text
-                  fontSize="10px"
-                  color="gray.500"
-                  opacity="0.8"
-                  mt="1px"
-                  mb="2px"
-                  fontStyle="italic"
-                >
-                  {formatTimestamp(m.createdAt)}
-                </Text>
+
+                  {/* Bubble Content */}
+                  <Box
+                    bg={
+                      isSentByMe
+                        ? "linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                        : "rgba(255, 255, 255, 0.98)"
+                    }
+                    color={isSentByMe ? "white" : "gray.800"}
+                    px={4}
+                    py={2.5}
+                    borderRadius={
+                      isSentByMe
+                        ? "18px 18px 4px 18px"
+                        : "18px 18px 18px 4px"
+                    }
+                    boxShadow={
+                      isSentByMe
+                        ? "0 4px 14px rgba(90, 103, 216, 0.3)"
+                        : "0 2px 10px rgba(0, 0, 0, 0.08)"
+                    }
+                    fontSize="sm"
+                    fontWeight="500"
+                    lineHeight="1.5"
+                    wordBreak="break-word"
+                    position="relative"
+                  >
+                    {m.deletedForEveryone ? (
+                      <Text fontStyle="italic" color={isSentByMe ? "whiteAlpha.700" : "gray.400"} fontSize="xs">
+                        🚫 This message was deleted
+                      </Text>
+                    ) : (
+                      m.content
+                    )}
+
+                    {/* Timestamp inside or under bubble */}
+                    <Text
+                      fontSize="2xs"
+                      color={isSentByMe ? "rgba(255, 255, 255, 0.7)" : "gray.400"}
+                      textAlign="right"
+                      mt={1}
+                      fontWeight="500"
+                    >
+                      {formatTimestamp(m.createdAt)}
+                    </Text>
+                  </Box>
+
+                  {/* Right Menu for Received Messages */}
+                  {!isSentByMe && !m.deletedForEveryone && (
+                    <Menu placement="right-start">
+                      <MenuButton
+                        as={IconButton}
+                        aria-label="Options"
+                        icon={<FiMoreVertical />}
+                        size="xs"
+                        variant="ghost"
+                        color="gray.400"
+                        opacity={0}
+                        _groupHover={{ opacity: 1 }}
+                        _hover={{ bg: "rgba(0, 0, 0, 0.08)", color: "gray.700" }}
+                        borderRadius="full"
+                        transition="opacity 0.2s ease"
+                      />
+                      <MenuList zIndex={2000} minW="140px" p={1.5} borderRadius="xl" boxShadow="0 8px 30px rgba(0,0,0,0.15)">
+                        <MenuItem
+                          borderRadius="lg"
+                          fontSize="xs"
+                          fontWeight="600"
+                          onClick={() => handleDeleteForMe(m._id)}
+                        >
+                          Delete for Me
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  )}
+                </Flex>
               </Box>
-              {m.sender._id === user._id && (
-                <Tooltip
-                  label={m.sender?.name || "Unknown User"}
-                  placement="bottom-end"
-                  hasArrow
-                  bg="purple.700"
-                  color="white"
-                >
-                  <Avatar
-                    mt="7px"
-                    ml={2}
-                    size="sm"
-                    cursor="pointer"
-                    name={m.sender?.name || "Unknown"}
-                    src={m.sender?.pic}
-                    bg="purple.600"
-                  />
-                </Tooltip>
-              )}
-            </Box>
+            </Flex>
           );
         })}
     </Box>

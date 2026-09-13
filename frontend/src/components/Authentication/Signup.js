@@ -1,35 +1,57 @@
-import { Button } from "@chakra-ui/button";
-import { FormControl, FormLabel } from "@chakra-ui/form-control";
-import { Input, InputGroup, InputRightElement } from "@chakra-ui/input";
-import { VStack } from "@chakra-ui/layout";
-import { useToast } from "@chakra-ui/toast";
+import React, { useState } from "react";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  InputRightElement,
+  VStack,
+  useToast,
+  Icon,
+  Avatar,
+  Flex,
+} from "@chakra-ui/react";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
 import config from "../../config/config";
 
 const Signup = () => {
   const [show, setShow] = useState(false);
-  const handleClick = () => setShow(!show);
+  const [showConfirm, setShowConfirm] = useState(false);
   const toast = useToast();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
-  const [name, setName] = useState();
-  const [email, setEmail] = useState();
-  const [confirmpassword, setConfirmpassword] = useState();
-  const [password, setPassword] = useState();
-  const [pic, setPic] = useState();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmpassword, setConfirmpassword] = useState("");
+  const [pic, setPic] = useState("");
   const [picLoading, setPicLoading] = useState(false);
 
   const submitHandler = async () => {
     setPicLoading(true);
     if (!name || !email || !password || !confirmpassword) {
       toast({
-        title: "Please Fill all the Fields",
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
         status: "warning",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
+      });
+      setPicLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
       });
       setPicLoading(false);
       return;
@@ -37,13 +59,16 @@ const Signup = () => {
     if (password !== confirmpassword) {
       toast({
         title: "Passwords Do Not Match",
+        description: "Please verify that both passwords match.",
         status: "warning",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
+      setPicLoading(false);
       return;
     }
+
     try {
       const config_headers = {
         headers: {
@@ -61,23 +86,24 @@ const Signup = () => {
         config_headers
       );
       toast({
-        title: "Registration Successful",
+        title: "Account Created!",
+        description: `Welcome to YapMonster, ${data.name}!`,
         status: "success",
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       localStorage.setItem("userInfo", JSON.stringify(data));
       setPicLoading(false);
-      navigate("/chats"); 
+      navigate("/chats");
     } catch (error) {
       toast({
-        title: "Error Occurred!",
-        description: error.response?.data?.message || "Registration failed",
+        title: "Registration Failed",
+        description: error.response?.data?.message || "Error creating account.",
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       setPicLoading(false);
     }
@@ -86,25 +112,18 @@ const Signup = () => {
   const postDetails = (pics) => {
     setPicLoading(true);
     if (!pics) {
-      toast({
-        title: "Please Select an Image!",
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
       setPicLoading(false);
       return;
     }
     if (pics.type === "image/jpeg" || pics.type === "image/png" || pics.type === "image/webp") {
       if (pics.size > 2 * 1024 * 1024) {
         toast({
-          title: "Image too large!",
+          title: "Image too large",
           description: "Please select an image smaller than 2MB",
           status: "warning",
-          duration: 5000,
+          duration: 3000,
           isClosable: true,
-          position: "bottom",
+          position: "top",
         });
         setPicLoading(false);
         return;
@@ -146,276 +165,268 @@ const Signup = () => {
         };
         img.src = e.target.result;
       };
-      reader.onerror = () => {
-        toast({
-          title: "Failed to read image",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "bottom",
-        });
-        setPicLoading(false);
-      };
       reader.readAsDataURL(pics);
     } else {
       toast({
-        title: "Please Select an Image (JPEG/PNG/WEBP)!",
+        title: "Invalid file format",
+        description: "Please select JPEG, PNG, or WebP.",
         status: "warning",
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       setPicLoading(false);
-      return;
     }
   };
 
   return (
-    <VStack
-      spacing="4"
-      w="100%"
-      maxH="50vh"
-      overflowY="auto"
-      css={{
-        scrollBehavior: 'smooth',
-        '&::-webkit-scrollbar': {
-          width: '0px !important',
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'transparent !important',
-        },
-        scrollbarWidth: 'none !important',
-        msOverflowStyle: 'none !important',
-      }}
-    >
-      <FormControl id="first-name" isRequired>
-        <FormLabel 
+    <VStack spacing={3.5} w="100%">
+      <FormControl id="signup-name" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
           mb={1}
         >
-          Name
+          Full Name
         </FormLabel>
         <Input
-          placeholder="Enter Your Name"
+          value={name}
+          placeholder="e.g. Alex Miller"
           onChange={(e) => setName(e.target.value)}
-          bg="rgba(255, 255, 255, 0.1)"
-          border="1px solid rgba(255, 255, 255, 0.2)"
+          bg="rgba(255, 255, 255, 0.07)"
+          border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+          fontSize="sm"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
-            borderColor: "#667eea",
-            boxShadow: "0 0 0 1px #667eea",
-            bg: "rgba(255, 255, 255, 0.15)"
+            borderColor: "#63B3ED",
+            boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+            bg: "rgba(255, 255, 255, 0.12)",
           }}
           _hover={{
-            bg: "rgba(255, 255, 255, 0.15)"
+            bg: "rgba(255, 255, 255, 0.1)",
+            borderColor: "rgba(255, 255, 255, 0.25)",
           }}
-          borderRadius="lg"
-          transition="all 0.3s ease-in-out"
-          size="md"
+          borderRadius="xl"
+          h="42px"
+          transition="all 0.2s ease-in-out"
         />
       </FormControl>
-      <FormControl id="email" isRequired>
-        <FormLabel 
+
+      <FormControl id="signup-email" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
           mb={1}
         >
           Email Address
         </FormLabel>
         <Input
+          value={email}
           type="email"
-          placeholder="Enter Your Email Address"
+          placeholder="name@example.com"
           onChange={(e) => setEmail(e.target.value)}
-          bg="rgba(255, 255, 255, 0.1)"
-          border="1px solid rgba(255, 255, 255, 0.2)"
+          bg="rgba(255, 255, 255, 0.07)"
+          border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+          fontSize="sm"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
-            borderColor: "#667eea",
-            boxShadow: "0 0 0 1px #667eea",
-            bg: "rgba(255, 255, 255, 0.15)"
+            borderColor: "#63B3ED",
+            boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+            bg: "rgba(255, 255, 255, 0.12)",
           }}
           _hover={{
-            bg: "rgba(255, 255, 255, 0.15)"
+            bg: "rgba(255, 255, 255, 0.1)",
+            borderColor: "rgba(255, 255, 255, 0.25)",
           }}
-          borderRadius="lg"
-          transition="all 0.3s ease-in-out"
-          size="md"
+          borderRadius="xl"
+          h="42px"
+          transition="all 0.2s ease-in-out"
         />
       </FormControl>
-      <FormControl id="password" isRequired>
-        <FormLabel 
+
+      <FormControl id="signup-password" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
           mb={1}
         >
           Password
         </FormLabel>
         <InputGroup size="md">
           <Input
+            value={password}
             type={show ? "text" : "password"}
-            placeholder="Enter Password"
+            placeholder="At least 6 characters"
             onChange={(e) => setPassword(e.target.value)}
-            bg="rgba(255, 255, 255, 0.1)"
-            border="1px solid rgba(255, 255, 255, 0.2)"
+            bg="rgba(255, 255, 255, 0.07)"
+            border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+            fontSize="sm"
+            _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
-              borderColor: "#667eea",
-              boxShadow: "0 0 0 1px #667eea",
-              bg: "rgba(255, 255, 255, 0.15)"
+              borderColor: "#63B3ED",
+              boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+              bg: "rgba(255, 255, 255, 0.12)",
             }}
             _hover={{
-              bg: "rgba(255, 255, 255, 0.15)"
+              bg: "rgba(255, 255, 255, 0.1)",
+              borderColor: "rgba(255, 255, 255, 0.25)",
             }}
-            borderRadius="lg"
-            transition="all 0.3s ease-in-out"
+            borderRadius="xl"
+            h="42px"
+            transition="all 0.2s ease-in-out"
           />
-          <InputRightElement width="4.5rem">
+          <InputRightElement h="42px" pr={1}>
             <Button
-              h="1.75rem"
+              h="26px"
+              w="26px"
+              minW="26px"
+              p={0}
               size="sm"
-              onClick={handleClick}
+              onClick={() => setShow(!show)}
               bg="rgba(255, 255, 255, 0.1)"
-              border="1px solid rgba(255, 255, 255, 0.2)"
-              color="white"
-              _hover={{ 
-                bg: "rgba(255, 255, 255, 0.2)",
-                transform: "scale(1.05)"
-              }}
-              borderRadius="md"
-              transition="all 0.2s ease-in-out"
+              color="rgba(255, 255, 255, 0.8)"
+              _hover={{ bg: "rgba(255, 255, 255, 0.2)", color: "white" }}
+              borderRadius="lg"
             >
-              {show ? "Hide" : "Show"}
+              <Icon as={show ? ViewOffIcon : ViewIcon} fontSize="xs" />
             </Button>
           </InputRightElement>
         </InputGroup>
       </FormControl>
-      <FormControl id="password" isRequired>
-        <FormLabel 
+
+      <FormControl id="signup-confirm-password" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
           mb={1}
         >
           Confirm Password
         </FormLabel>
         <InputGroup size="md">
           <Input
-            type={show ? "text" : "password"}
-            placeholder="Confirm Password"
+            value={confirmpassword}
+            type={showConfirm ? "text" : "password"}
+            placeholder="Re-enter password"
             onChange={(e) => setConfirmpassword(e.target.value)}
-            bg="rgba(255, 255, 255, 0.1)"
-            border="1px solid rgba(255, 255, 255, 0.2)"
+            bg="rgba(255, 255, 255, 0.07)"
+            border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+            fontSize="sm"
+            _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
-              borderColor: "#667eea",
-              boxShadow: "0 0 0 1px #667eea",
-              bg: "rgba(255, 255, 255, 0.15)"
+              borderColor: "#63B3ED",
+              boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+              bg: "rgba(255, 255, 255, 0.12)",
             }}
             _hover={{
-              bg: "rgba(255, 255, 255, 0.15)"
+              bg: "rgba(255, 255, 255, 0.1)",
+              borderColor: "rgba(255, 255, 255, 0.25)",
             }}
-            borderRadius="lg"
-            transition="all 0.3s ease-in-out"
+            borderRadius="xl"
+            h="42px"
+            transition="all 0.2s ease-in-out"
           />
-          <InputRightElement width="4.5rem">
+          <InputRightElement h="42px" pr={1}>
             <Button
-              h="1.75rem"
+              h="26px"
+              w="26px"
+              minW="26px"
+              p={0}
               size="sm"
-              onClick={handleClick}
+              onClick={() => setShowConfirm(!showConfirm)}
               bg="rgba(255, 255, 255, 0.1)"
-              border="1px solid rgba(255, 255, 255, 0.2)"
-              color="white"
-              _hover={{ 
-                bg: "rgba(255, 255, 255, 0.2)",
-                transform: "scale(1.05)"
-              }}
-              borderRadius="md"
-              transition="all 0.2s ease-in-out"
+              color="rgba(255, 255, 255, 0.8)"
+              _hover={{ bg: "rgba(255, 255, 255, 0.2)", color: "white" }}
+              borderRadius="lg"
             >
-              {show ? "Hide" : "Show"}
+              <Icon as={showConfirm ? ViewOffIcon : ViewIcon} fontSize="xs" />
             </Button>
           </InputRightElement>
         </InputGroup>
       </FormControl>
-      <FormControl id="pic">
-        <FormLabel 
+
+      <FormControl id="signup-pic">
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
           mb={1}
         >
-          Upload your Picture
+          Profile Avatar (Optional)
         </FormLabel>
-        <Input
-          type="file"
-          p={1}
-          accept="image/*"
-          onChange={(e) => postDetails(e.target.files[0])}
-          bg="rgba(255, 255, 255, 0.1)"
-          border="1px solid rgba(255, 255, 255, 0.2)"
-          color="white"
-          _focus={{
-            borderColor: "#667eea",
-            boxShadow: "0 0 0 1px #667eea",
-            bg: "rgba(255, 255, 255, 0.15)"
-          }}
-          _hover={{
-            bg: "rgba(255, 255, 255, 0.15)"
-          }}
-          borderRadius="lg"
-          transition="all 0.3s ease-in-out"
-          size="md"
-          sx={{
-            '&::file-selector-button': {
-              bg: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: 'white',
-              borderRadius: 'md',
-              padding: '6px 12px',
-              marginRight: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                bg: 'rgba(255, 255, 255, 0.2)',
-                transform: 'scale(1.05)'
-              }
-            }
-          }}
-        />
+        <Flex align="center" gap={3}>
+          <Avatar size="sm" src={pic} name={name || "User"} border="2px solid rgba(255, 255, 255, 0.2)" />
+          <Input
+            type="file"
+            p={1}
+            accept="image/*"
+            onChange={(e) => postDetails(e.target.files[0])}
+            bg="rgba(255, 255, 255, 0.07)"
+            border="1px solid rgba(255, 255, 255, 0.15)"
+            color="white"
+            fontSize="xs"
+            borderRadius="xl"
+            h="40px"
+            sx={{
+              "&::file-selector-button": {
+                bg: "rgba(255, 255, 255, 0.15)",
+                border: "none",
+                color: "white",
+                borderRadius: "md",
+                padding: "4px 8px",
+                marginRight: "8px",
+                cursor: "pointer",
+                fontSize: "xs",
+                fontWeight: "600",
+                "&:hover": { bg: "rgba(255, 255, 255, 0.25)" },
+              },
+            }}
+          />
+        </Flex>
       </FormControl>
+
       <Button
         width="100%"
         onClick={submitHandler}
         isLoading={picLoading}
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         color="white"
-        _hover={{ 
-          transform: "translateY(-2px)",
-          boxShadow: "0 8px 25px rgba(90, 103, 216, 0.4)"
+        h="46px"
+        borderRadius="xl"
+        fontWeight="700"
+        fontSize="sm"
+        letterSpacing="0.02em"
+        boxShadow="0 8px 20px rgba(90, 103, 216, 0.35)"
+        _hover={{
+          transform: "translateY(-1px)",
+          boxShadow: "0 12px 28px rgba(90, 103, 216, 0.5)",
+          filter: "brightness(1.08)",
         }}
         _active={{
-          transform: "translateY(0)"
+          transform: "translateY(0)",
+          boxShadow: "0 4px 12px rgba(90, 103, 216, 0.3)",
         }}
-        borderRadius="lg"
-        py={2}
-        fontWeight="600"
-        fontSize="md"
-        transition="all 0.3s ease-in-out"
+        transition="all 0.2s ease-in-out"
         mt={2}
       >
-        Sign Up
+        Create Free Account
       </Button>
     </VStack>
   );

@@ -234,30 +234,39 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
           colorScheme="purple"
         />
       )}
-      <Modal size="lg" onClose={onClose} isOpen={isOpen} isCentered>
-        <ModalOverlay />
-        <ModalContent h="auto" maxH="90vh" bg="#E6E6FA">
+      <Modal onClose={onClose} isOpen={isOpen} isCentered size="md">
+        <ModalOverlay bg="rgba(0, 0, 0, 0.75)" backdropFilter="blur(8px)" />
+        <ModalContent
+          bg="linear-gradient(180deg, #050a1f 0%, #020617 100%)"
+          color="white"
+          borderRadius="24px"
+          border="1px solid rgba(255, 255, 255, 0.1)"
+          boxShadow="0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(90, 103, 216, 0.2)"
+          overflow="hidden"
+        >
           <ModalHeader
-            fontSize="40px"
-            fontFamily="Work sans"
+            fontSize="xl"
+            fontWeight="800"
+            fontFamily="'Plus Jakarta Sans', sans-serif"
             display="flex"
             justifyContent="center"
-            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+            bg="rgba(10, 18, 42, 0.95)"
             color="white"
-            borderRadius="md"
+            borderBottom="1px solid rgba(255, 255, 255, 0.08)"
+            py={4}
           >
-            {isEditing ? "Edit Profile" : (isOwnProfile ? user?.name : "View Profile")}
+            {isEditing ? "Edit Profile" : (isOwnProfile ? user?.name : "User Profile")}
           </ModalHeader>
-          <ModalCloseButton color="white" />
+          <ModalCloseButton color="white" borderRadius="full" _hover={{ bg: "rgba(255, 255, 255, 0.1)" }} />
           <ModalBody
             display="flex"
             flexDir="column"
             alignItems="center"
             justifyContent="space-between"
-            bg="#E6E6FA"
+            bg="transparent"
             p={6}
           >
-            <VStack spacing={6} w="100%">
+            <VStack spacing={5} w="100%">
               {/* Profile Picture Section */}
               <Box position="relative">
                 <Avatar
@@ -265,22 +274,26 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                   cursor={isEditing && isOwnProfile ? "pointer" : "default"}
                   name={user?.name}
                   src={isEditing ? pic : user?.pic}
-                  border="4px solid"
-                  borderColor="purple.500"
+                  border="3px solid #60A5FA"
+                  boxShadow="0 0 24px rgba(96, 165, 250, 0.35)"
                   onClick={isEditing && isOwnProfile ? triggerFileInput : undefined}
-                  _hover={isEditing && isOwnProfile ? { opacity: 0.8 } : {}}
+                  _hover={isEditing && isOwnProfile ? { opacity: 0.85, transform: "scale(1.02)" } : {}}
+                  transition="all 0.2s ease"
                 />
                 {isEditing && isOwnProfile && (
                   <IconButton
                     icon={<EditIcon />}
                     size="sm"
-                    colorScheme="purple"
+                    bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                    color="white"
                     position="absolute"
                     bottom="0"
                     right="0"
                     borderRadius="full"
+                    border="2px solid #020617"
                     onClick={triggerFileInput}
                     aria-label="Edit profile picture"
+                    _hover={{ transform: "scale(1.1)", filter: "brightness(1.15)" }}
                   />
                 )}
                 <input
@@ -297,30 +310,37 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                 <Box w="100%" mt={2} mb={2}>
                   <Button
                     size="sm"
-                    colorScheme="purple"
                     variant="outline"
+                    borderColor="rgba(255, 255, 255, 0.2)"
+                    color="#BAE6FD"
+                    _hover={{ bg: "rgba(255, 255, 255, 0.08)" }}
                     onClick={() => setShowBgPicker((v) => !v)}
                     mb={2}
+                    borderRadius="xl"
+                    w="100%"
                   >
                     Change Chat Background
                   </Button>
                   {showBgPicker && (
-                    <Box p={3} borderRadius="lg" bg="#f8fafc" boxShadow="md" mt={2}>
+                    <Box p={3} borderRadius="xl" bg="rgba(255, 255, 255, 0.06)" border="1px solid rgba(255, 255, 255, 0.12)" mt={2}>
                       <Box>
                         <SketchPicker
                           color={bgColor}
                           onChangeComplete={(color) => setBgColor(color.hex)}
                           disableAlpha
                         />
-                        <Box mt={2} w="100%" h="40px" borderRadius="md" bg={bgColor} border="1px solid #ccc" />
+                        <Box mt={2} w="100%" h="36px" borderRadius="lg" bg={bgColor} border="1px solid rgba(255, 255, 255, 0.2)" />
                       </Box>
                       <Button
                         size="sm"
-                        colorScheme="purple"
+                        bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                        color="white"
                         mt={3}
                         isLoading={bgLoading}
                         onClick={handleSaveBackground}
+                        borderRadius="xl"
                         w="100%"
+                        _hover={{ filter: "brightness(1.1)" }}
                       >
                         Save Background
                       </Button>
@@ -330,27 +350,32 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
               )}
 
               {/* Profile Information */}
-              <VStack spacing={4} w="100%">
+              <VStack spacing={3} w="100%">
                 {isEditing ? (
                   <FormControl>
-                    <FormLabel color="purple.700" fontWeight="600">
+                    <FormLabel color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase">
                       Name
                     </FormLabel>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter your name"
-                      bg="white"
-                      borderColor="purple.300"
-                      focusBorderColor="purple.500"
-                      _hover={{ borderColor: "purple.400" }}
+                      bg="rgba(255, 255, 255, 0.06)"
+                      border="1px solid rgba(255, 255, 255, 0.12)"
+                      color="white"
+                      borderRadius="xl"
+                      fontSize="sm"
+                      h="44px"
+                      _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                      _focus={{ borderColor: "#60A5FA", bg: "rgba(255, 255, 255, 0.09)", boxShadow: "0 0 0 1px #60A5FA" }}
                     />
                   </FormControl>
                 ) : (
                   <Text
-                    fontSize={{ base: "28px", md: "30px" }}
-                    fontFamily="Work sans"
-                    color="purple.700"
+                    fontSize="24px"
+                    fontWeight="800"
+                    fontFamily="'Plus Jakarta Sans', sans-serif"
+                    color="white"
                     textAlign="center"
                   >
                     {user?.name}
@@ -358,34 +383,42 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                 )}
 
                 <Text
-                  fontSize="lg"
-                  fontFamily="Work sans"
-                  color="purple.600"
+                  fontSize="sm"
+                  color="rgba(255, 255, 255, 0.65)"
                   textAlign="center"
                 >
-                  Email: {user?.email}
+                  <b>Email: </b> {user?.email}
                 </Text>
               </VStack>
             </VStack>
           </ModalBody>
-          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
-            <HStack spacing={3}>
+          <ModalFooter bg="rgba(4, 9, 24, 0.95)" borderTop="1px solid rgba(255, 255, 255, 0.08)" py={3.5} px={6}>
+            <HStack spacing={3} w="100%" justify="flex-end">
               {isEditing ? (
                 <>
                   <Button
                     onClick={handleCancel}
-                    bg="gray.100"
-                    color="gray.700"
-                    _hover={{ bg: "gray.200" }}
+                    bg="rgba(255, 255, 255, 0.08)"
+                    color="white"
+                    borderRadius="xl"
+                    px={4}
+                    h="38px"
+                    fontSize="sm"
+                    _hover={{ bg: "rgba(255, 255, 255, 0.15)" }}
                     isDisabled={loading}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSave}
-                    bg="white"
-                    color="purple.700"
-                    _hover={{ bg: "purple.50" }}
+                    bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                    color="white"
+                    borderRadius="xl"
+                    px={5}
+                    h="38px"
+                    fontSize="sm"
+                    fontWeight="700"
+                    _hover={{ transform: "translateY(-1px)", boxShadow: "0 4px 14px rgba(90, 103, 216, 0.4)" }}
                     isLoading={loading}
                     loadingText="Saving..."
                   >
@@ -397,9 +430,14 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                   {isOwnProfile && (
                     <Button
                       onClick={handleEdit}
-                      bg="white"
-                      color="purple.700"
-                      _hover={{ bg: "purple.50" }}
+                      bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                      color="white"
+                      borderRadius="xl"
+                      px={5}
+                      h="38px"
+                      fontSize="sm"
+                      fontWeight="700"
+                      _hover={{ transform: "translateY(-1px)", boxShadow: "0 4px 14px rgba(90, 103, 216, 0.4)" }}
                       leftIcon={<EditIcon />}
                     >
                       Edit Profile
@@ -407,9 +445,13 @@ const ProfileModal = ({ user, children, chatId, onBackgroundChange }) => {
                   )}
                   <Button
                     onClick={onClose}
-                    bg="gray.100"
-                    color="gray.700"
-                    _hover={{ bg: "gray.200" }}
+                    bg="rgba(255, 255, 255, 0.08)"
+                    color="white"
+                    borderRadius="xl"
+                    px={4}
+                    h="38px"
+                    fontSize="sm"
+                    _hover={{ bg: "rgba(255, 255, 255, 0.15)" }}
                   >
                     Close
                   </Button>

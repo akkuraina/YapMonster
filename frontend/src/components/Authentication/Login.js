@@ -1,11 +1,18 @@
-import { Button } from "@chakra-ui/button";
-import { FormControl, FormLabel } from "@chakra-ui/form-control";
-import { Input, InputGroup, InputRightElement } from "@chakra-ui/input";
-import { VStack } from "@chakra-ui/layout";
-import { useState } from "react";
+import React, { useState } from "react";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  InputRightElement,
+  VStack,
+  useToast,
+  Icon,
+} from "@chakra-ui/react";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useToast } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom"; 
 import { ChatState } from "../../Context/ChatProvider";
 import config from "../../config/config";
 
@@ -13,22 +20,23 @@ const Login = () => {
   const [show, setShow] = useState(false);
   const handleClick = () => setShow(!show);
   const toast = useToast();
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { setUser } = ChatState();
 
   const submitHandler = async () => {
     setLoading(true);
     if (!email || !password) {
       toast({
-        title: "Please Fill all the Fields",
+        title: "Missing Information",
+        description: "Please fill in all the required fields.",
         status: "warning",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       setLoading(false);
       return;
@@ -48,71 +56,81 @@ const Login = () => {
       );
 
       toast({
-        title: "Login Successful",
+        title: "Welcome Back!",
+        description: `Logged in as ${data.name}`,
         status: "success",
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       setUser(data);
       localStorage.setItem("userInfo", JSON.stringify(data));
       setLoading(false);
-      navigate("/chats"); 
+      navigate("/chats");
     } catch (error) {
       toast({
-        title: "Error Occurred!",
-        description: error.response?.data?.message || "Login failed",
+        title: "Authentication Failed",
+        description: error.response?.data?.message || "Invalid credentials provided.",
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
-        position: "bottom",
+        position: "top",
       });
       setLoading(false);
     }
   };
 
+  const handleGuestLogin = () => {
+    setEmail("guest@example.com");
+    setPassword("123456");
+  };
+
   return (
-    <VStack 
-      spacing="4" 
-      w="100%"
-    >
-      <FormControl id="email" isRequired>
-        <FormLabel 
+    <VStack spacing={4} w="100%">
+      <FormControl id="login-email" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
-          mb={1}
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
+          mb={1.5}
         >
           Email Address
         </FormLabel>
         <Input
           value={email}
           type="email"
-          placeholder="Enter Your Email Address"
+          placeholder="name@example.com"
           onChange={(e) => setEmail(e.target.value)}
-          bg="rgba(255, 255, 255, 0.1)"
-          border="1px solid rgba(255, 255, 255, 0.2)"
+          bg="rgba(255, 255, 255, 0.07)"
+          border="1px solid rgba(255, 255, 255, 0.15)"
           color="white"
-          _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+          fontSize="sm"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
           _focus={{
-            borderColor: "#667eea",
-            boxShadow: "0 0 0 1px #667eea",
-            bg: "rgba(255, 255, 255, 0.15)"
+            borderColor: "#63B3ED",
+            boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+            bg: "rgba(255, 255, 255, 0.12)",
           }}
           _hover={{
-            bg: "rgba(255, 255, 255, 0.15)"
+            bg: "rgba(255, 255, 255, 0.1)",
+            borderColor: "rgba(255, 255, 255, 0.25)",
           }}
-          borderRadius="lg"
-          transition="all 0.3s ease-in-out"
-          size="md"
+          borderRadius="xl"
+          h="44px"
+          transition="all 0.2s ease-in-out"
         />
       </FormControl>
-      <FormControl id="password" isRequired>
-        <FormLabel 
+
+      <FormControl id="login-password" isRequired>
+        <FormLabel
           color="rgba(255, 255, 255, 0.9)"
           fontWeight="600"
-          fontSize="sm"
-          mb={1}
+          fontSize="xs"
+          letterSpacing="0.03em"
+          textTransform="uppercase"
+          mb={1.5}
         >
           Password
         </FormLabel>
@@ -121,85 +139,95 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type={show ? "text" : "password"}
-            placeholder="Enter password"
-            bg="rgba(255, 255, 255, 0.1)"
-            border="1px solid rgba(255, 255, 255, 0.2)"
+            placeholder="Enter your password"
+            bg="rgba(255, 255, 255, 0.07)"
+            border="1px solid rgba(255, 255, 255, 0.15)"
             color="white"
-            _placeholder={{ color: "rgba(255, 255, 255, 0.5)" }}
+            fontSize="sm"
+            _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
             _focus={{
-              borderColor: "#667eea",
-              boxShadow: "0 0 0 1px #667eea",
-              bg: "rgba(255, 255, 255, 0.15)"
+              borderColor: "#63B3ED",
+              boxShadow: "0 0 0 1px #63B3ED, 0 0 16px rgba(99, 179, 237, 0.25)",
+              bg: "rgba(255, 255, 255, 0.12)",
             }}
             _hover={{
-              bg: "rgba(255, 255, 255, 0.15)"
+              bg: "rgba(255, 255, 255, 0.1)",
+              borderColor: "rgba(255, 255, 255, 0.25)",
             }}
-            borderRadius="lg"
-            transition="all 0.3s ease-in-out"
+            borderRadius="xl"
+            h="44px"
+            transition="all 0.2s ease-in-out"
+            onKeyDown={(e) => e.key === "Enter" && submitHandler()}
           />
-          <InputRightElement width="4.5rem">
-            <Button 
-              h="1.75rem" 
-              size="sm" 
-              onClick={handleClick} 
+          <InputRightElement h="44px" pr={1}>
+            <Button
+              h="28px"
+              w="28px"
+              minW="28px"
+              p={0}
+              size="sm"
+              onClick={handleClick}
               bg="rgba(255, 255, 255, 0.1)"
-              border="1px solid rgba(255, 255, 255, 0.2)"
-              color="white"
-              _hover={{ 
+              color="rgba(255, 255, 255, 0.8)"
+              _hover={{
                 bg: "rgba(255, 255, 255, 0.2)",
-                transform: "scale(1.05)"
+                color: "white",
               }}
-              borderRadius="md"
-              transition="all 0.2s ease-in-out"
+              borderRadius="lg"
+              aria-label={show ? "Hide password" : "Show password"}
             >
-              {show ? "Hide" : "Show"}
+              <Icon as={show ? ViewOffIcon : ViewIcon} fontSize="xs" />
             </Button>
           </InputRightElement>
         </InputGroup>
       </FormControl>
+
       <Button
         width="100%"
         onClick={submitHandler}
         isLoading={loading}
         bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
         color="white"
-        _hover={{ 
-          transform: "translateY(-2px)",
-          boxShadow: "0 8px 25px rgba(90, 103, 216, 0.4)"
+        h="46px"
+        borderRadius="xl"
+        fontWeight="700"
+        fontSize="sm"
+        letterSpacing="0.02em"
+        boxShadow="0 8px 20px rgba(90, 103, 216, 0.35)"
+        _hover={{
+          transform: "translateY(-1px)",
+          boxShadow: "0 12px 28px rgba(90, 103, 216, 0.5)",
+          filter: "brightness(1.08)",
         }}
         _active={{
-          transform: "translateY(0)"
+          transform: "translateY(0)",
+          boxShadow: "0 4px 12px rgba(90, 103, 216, 0.3)",
         }}
-        borderRadius="lg"
-        py={2}
-        fontWeight="600"
-        fontSize="md"
-        transition="all 0.3s ease-in-out"
+        transition="all 0.2s ease-in-out"
         mt={2}
       >
-        Login
+        Sign In to YapMonster
       </Button>
+
       <Button
         variant="ghost"
-        bg="rgba(255, 255, 255, 0.1)"
-        border="1px solid rgba(255, 255, 255, 0.2)"
-        color="rgba(255, 255, 255, 0.8)"
+        bg="rgba(255, 255, 255, 0.06)"
+        border="1px solid rgba(255, 255, 255, 0.12)"
+        color="rgba(255, 255, 255, 0.85)"
         width="100%"
-        onClick={() => {
-          setEmail("guest@example.com");
-          setPassword("123456");
+        h="40px"
+        onClick={handleGuestLogin}
+        _hover={{
+          bg: "rgba(255, 255, 255, 0.14)",
+          color: "white",
+          borderColor: "rgba(255, 255, 255, 0.25)",
         }}
-        _hover={{ 
-          bg: "rgba(255, 255, 255, 0.2)",
-          transform: "translateY(-1px)"
-        }}
-        borderRadius="lg"
-        py={2}
-        fontWeight="500"
-        fontSize="sm"
-        transition="all 0.3s ease-in-out"
+        borderRadius="xl"
+        fontWeight="600"
+        fontSize="xs"
+        transition="all 0.2s ease-in-out"
       >
-        Get Guest User Credentials
+        ⚡ Quick Fill Guest Credentials
       </Button>
     </VStack>
   );

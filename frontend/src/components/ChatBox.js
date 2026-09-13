@@ -1,3 +1,4 @@
+import React from "react";
 import { Box } from "@chakra-ui/layout";
 import "./styles.css";
 import SingleChat from "./SingleChat";
@@ -9,33 +10,19 @@ const Chatbox = ({ fetchAgain, setFetchAgain }) => {
   return (
     <Box
       display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
-      alignItems="stretch"
-      alignSelf="stretch"
       flexDirection="column"
-      padding={3}
-      bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-      width="100%"
-      height="100%"
-      borderRadius="lg"
-      borderWidth="5px"
-      borderColor="#5A67D8"
-      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-      overflow="auto"
-      css={{
-        '&::-webkit-scrollbar': {
-          width: '0px !important',
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent !important',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'transparent !important',
-        },
-        scrollbarWidth: 'none !important',
-        msOverflowStyle: 'none !important',
-        scrollBehavior: 'smooth',
-      }}
+      w="100%"
+      h="100%"
+      minH="0"
+      minW="0"
+      bg="rgba(5, 11, 28, 0.88)"
+      backdropFilter="blur(24px)"
+      borderRadius="24px"
+      border="1px solid rgba(255, 255, 255, 0.08)"
+      boxShadow="0 16px 45px rgba(0, 0, 0, 0.6)"
+      overflow="hidden"
+      p={{ base: 2, md: 3 }}
+      position="relative"
     >
       <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
     </Box>

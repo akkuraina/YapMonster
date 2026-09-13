@@ -7,12 +7,13 @@ import { IconButton, Spinner, useToast, Icon, Tooltip } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { ArrowBackIcon, ChatIcon, ArrowForwardIcon } from "@chakra-ui/icons";
-import { FaVideo } from "react-icons/fa";
+import { ArrowBackIcon, ArrowForwardIcon } from "@chakra-ui/icons";
+import { FaVideo, FaComments } from "react-icons/fa";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import VideoCallModal from "./VideoCall/VideoCallModal";
 import IncomingCallModal from "./VideoCall/IncomingCallModal";
+import YapMonsterWordmark from "./common/YapMonsterWordmark";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
@@ -21,7 +22,6 @@ import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 import config from "../config/config";
 
-// Use the same config as other components
 const ENDPOINT = config.BACKEND_URL;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -53,10 +53,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const fetchMessages = async () => {
     if (!selectedChat) return;
 
-    console.log("Fetching messages for chat:", selectedChat._id);
-
     try {
-      const config = {
+      const config_headers = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
@@ -66,9 +64,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
       const { data } = await axios.get(
         `${ENDPOINT}/api/message/${selectedChat._id}`,
-        config
+        config_headers
       );
-      console.log("Fetched messages:", data);
       setMessages(data);
       setLoading(false);
 
@@ -76,12 +73,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         socketRef.current.emit("join chat", selectedChat._id);
       }
     } catch (error) {
-      console.error("Error fetching messages:", error);
       toast({
-        title: "Error Occurred!",
-        description: "Failed to Load the Messages",
+        title: "Error Occurred",
+        description: "Failed to load messages",
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
         position: "bottom",
       });
@@ -89,93 +85,56 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
 
   const sendMessage = async (event) => {
-    // Check if it's a key event and not Enter, or if there's no message
-    if ((event.type === 'keydown' && event.key !== 'Enter') || !newMessage.trim()) {
+    if ((event.type === "keydown" && event.key !== "Enter") || !newMessage.trim()) {
       return;
     }
-    
-    // Check if selectedChat and its _id exist
-    if (!selectedChat || !selectedChat._id) {
-      console.error("No selected chat or chat ID");
-      toast({
-        title: "Error",
-        description: "No chat selected",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom",
-      });
-      return;
-    }
-    
+
+    if (!selectedChat || !selectedChat._id) return;
+
     if (socketRef.current) {
       socketRef.current.emit("stop typing", selectedChat._id);
     }
     const messageToSend = newMessage.trim();
     setNewMessage("");
-    
-    console.log("Sending message:", {
-      content: messageToSend,
-      chatId: selectedChat._id,
-      selectedChat: selectedChat
-    });
-    
-    console.log("Full request data:", {
-      content: messageToSend,
-      chatId: selectedChat._id,
-      selectedChatId: selectedChat._id,
-      selectedChatType: typeof selectedChat._id,
-      selectedChatKeys: Object.keys(selectedChat || {})
-    });
-    
+
     try {
-      const config = {
+      const config_headers = {
         headers: {
           "Content-type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
       };
-      
+
       const { data } = await axios.post(
-        `${ENDPOINT}/api/message`,
+        `${config.BACKEND_URL}/api/message`,
         {
           content: messageToSend,
           chatId: selectedChat._id,
         },
-        config
+        config_headers
       );
-      
-      console.log("Message sent successfully:", data);
-      // Add message to local state immediately for better UX
-      setMessages(prev => [...prev, data]);
+
       if (socketRef.current) {
         socketRef.current.emit("new message", data);
       }
+      setMessages((prev) => [...prev, data]);
     } catch (error) {
-      console.error("Send message error:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      // Only show error for actual network/server errors
-      if (error.code === 'NETWORK_ERROR' || (error.response && error.response.status >= 500)) {
-        toast({
-          title: "Error Occurred!",
-          description: "Failed to send the Message",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "bottom",
-        });
-      }
-      // Restore the message if sending failed
+      toast({
+        title: "Message Failed",
+        description: "Could not send message",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
       setNewMessage(messageToSend);
     }
   };
 
   useEffect(() => {
-    // Only create socket if it doesn't exist
     if (!socketRef.current) {
       socketRef.current = io(ENDPOINT, {
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         timeout: 20000,
         forceNew: false,
       });
@@ -191,7 +150,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socketRef.current.on("stop typing", () => {
       setIsTyping(false);
     });
-    socketRef.current.on("connect_error", (error) => {
+    socketRef.current.on("connect_error", () => {
       setSocketConnected(false);
     });
 
@@ -227,7 +186,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     });
 
     socketRef.current.on("incoming call", (data) => {
-      console.log("Incoming call received:", data);
       setIncomingCall(data);
     });
 
@@ -243,7 +201,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setVideoCallOpen(false);
     });
 
-    socketRef.current.on("call ended", (data) => {
+    socketRef.current.on("call ended", () => {
       toast({
         title: "Call Ended",
         status: "info",
@@ -333,7 +291,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     fetchMessages();
     selectedChatCompareRef.current = selectedChat;
 
-    // Clear notifications for this chat when selected
     if (selectedChat) {
       setNotification((prev) => prev.filter((notif) => notif.chat._id !== selectedChat._id));
     }
@@ -361,7 +318,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
-  // Fetch chat background on chat change or refresh
   const fetchChatBg = async () => {
     if (!selectedChat) return;
     try {
@@ -380,217 +336,184 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   }, [selectedChat]);
 
   return (
-    <>
+    <Box w="100%" h="100%" display="flex" flexDirection="column" position="relative">
       {selectedChat ? (
         <>
-          {/* Fixed Chat Header */}
+          {/* Top Chat Header */}
           <Box
-            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
-            p={4}
-            borderRadius="0 0 20px 20px"
-            boxShadow="0 4px 20px rgba(0, 0, 0, 0.1)"
-            mb={0}
-            position="sticky"
-            top={0}
+            bg="rgba(4, 9, 24, 0.95)"
+            backdropFilter="blur(20px)"
+            px={{ base: 3, md: 5 }}
+            py={3}
+            borderRadius="18px 18px 0 0"
+            borderBottom="1px solid rgba(255, 255, 255, 0.08)"
+            boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
+            position="relative"
             zIndex={10}
           >
-            <Flex
-              alignItems="center"
-              justifyContent="space-between"
-              w="100%"
-            >
-              <IconButton
-                icon={<ArrowBackIcon />}
-                onClick={() => setSelectedChat(null)}
-                bg="rgba(255, 255, 255, 0.2)"
-                backdropFilter="blur(10px)"
-                border="2px solid rgba(255, 255, 255, 0.3)"
-                color="white"
-                borderRadius="full"
-                _hover={{ 
-                  bg: "rgba(255, 255, 255, 0.3)",
-                  transform: "scale(1.05)",
-                  transition: "all 0.2s ease-in-out"
-                }}
-                transition="all 0.2s ease-in-out"
-              />
-              <Box
-                fontSize={{ base: "xl", md: "2xl" }}
-                fontFamily="'Poppins', sans-serif"
-                fontWeight="700"
-                color="white"
-                textAlign="center"
-                flex="1"
-                mx={4}
-              >
-                {messages &&
-                  (!selectedChat.isGroupChat ? (
-                    <Flex alignItems="center" justifyContent="center" gap={3}>
-                      <Avatar
-                        size="md"
-                        name={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.name || "Unknown User" : "Unknown User"}
-                        src={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.pic || "" : ""}
-                        border="2px solid"
-                        borderColor="rgba(255, 255, 255, 0.3)"
-                        bg="blue.600"
-                      />
-                      <Text>{selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}</Text>
-                      <Tooltip label="Start Video Call" placement="bottom">
-                        <IconButton
-                          icon={<FaVideo />}
-                          onClick={startVideoCall}
-                          bg="rgba(255, 255, 255, 0.2)"
-                          backdropFilter="blur(10px)"
-                          border="2px solid rgba(255, 255, 255, 0.3)"
-                          color="white"
-                          borderRadius="full"
-                          size="sm"
-                          _hover={{
-                            bg: "rgba(255, 255, 255, 0.35)",
-                            transform: "scale(1.08)",
-                            color: "green.300",
-                          }}
-                          aria-label="Start Video Call"
-                        />
-                      </Tooltip>
-                      <ProfileModal
-                        user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : user}
-                        chatId={selectedChat._id}
-                        onBackgroundChange={fetchChatBg}
-                      />
-                    </Flex>
-                  ) : (
-                    <Flex alignItems="center" justifyContent="center" gap={3}>
-                      <Avatar
-                        size="md"
-                        name={selectedChat.chatName || "Group"}
-                        src={selectedChat.groupPic}
-                        border="2px solid"
-                        borderColor="rgba(255, 255, 255, 0.3)"
-                        bg="purple.600"
-                      />
-                      <Text>{selectedChat.chatName?.toUpperCase() || "UNNAMED GROUP"}</Text>
-                      <Tooltip label="Start Group Video Call" placement="bottom">
-                        <IconButton
-                          icon={<FaVideo />}
-                          onClick={startVideoCall}
-                          bg="rgba(255, 255, 255, 0.2)"
-                          backdropFilter="blur(10px)"
-                          border="2px solid rgba(255, 255, 255, 0.3)"
-                          color="white"
-                          borderRadius="full"
-                          size="sm"
-                          _hover={{
-                            bg: "rgba(255, 255, 255, 0.35)",
-                            transform: "scale(1.08)",
-                            color: "green.300",
-                          }}
-                          aria-label="Start Group Video Call"
-                        />
-                      </Tooltip>
-                      <UpdateGroupChatModal
-                        fetchMessages={fetchMessages}
-                        fetchAgain={fetchAgain}
-                        setFetchAgain={setFetchAgain}
-                        onBackgroundChange={fetchChatBg}
-                      />
-                    </Flex>
-                  ))}
-              </Box>
+            <Flex alignItems="center" justifyContent="space-between" w="100%">
+              {/* Left: Back Button + Avatar + Name */}
+              <Flex alignItems="center" gap={3}>
+                <IconButton
+                  icon={<ArrowBackIcon />}
+                  onClick={() => setSelectedChat(null)}
+                  display={{ base: "flex", md: "none" }}
+                  bg="rgba(255, 255, 255, 0.2)"
+                  color="white"
+                  borderRadius="full"
+                  size="sm"
+                  _hover={{ bg: "rgba(255, 255, 255, 0.3)" }}
+                  aria-label="Back to chats"
+                />
+
+                {!selectedChat.isGroupChat ? (
+                  <Flex align="center" gap={3}>
+                    <Avatar
+                      size="sm"
+                      name={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.name || "User" : "User"}
+                      src={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users)?.pic || "" : ""}
+                      border="2px solid white"
+                      bg="blue.600"
+                    />
+                    <Box>
+                      <Text color="white" fontWeight="700" fontSize={{ base: "sm", md: "md" }} fontFamily="'Plus Jakarta Sans', sans-serif">
+                        {selectedChat.users && selectedChat.users.length > 0 ? getSender(user, selectedChat.users) : "Unknown User"}
+                      </Text>
+                      <Text color="green.300" fontSize="2xs" fontWeight="600">
+                        ● Active Direct Chat
+                      </Text>
+                    </Box>
+                  </Flex>
+                ) : (
+                  <Flex align="center" gap={3}>
+                    <Avatar
+                      size="sm"
+                      name={selectedChat.chatName || "Group"}
+                      src={selectedChat.groupPic}
+                      border="2px solid white"
+                      bg="purple.600"
+                    />
+                    <Box>
+                      <Text color="white" fontWeight="700" fontSize={{ base: "sm", md: "md" }} fontFamily="'Plus Jakarta Sans', sans-serif">
+                        {selectedChat.chatName?.toUpperCase() || "UNNAMED GROUP"}
+                      </Text>
+                      <Text color="purple.200" fontSize="2xs" fontWeight="600">
+                        👥 {selectedChat.users?.length || 0} participants
+                      </Text>
+                    </Box>
+                  </Flex>
+                )}
+              </Flex>
+
+              {/* Right: Circular / Pill Action Controls */}
+              <Flex align="center" gap={2}>
+                <Tooltip label={selectedChat.isGroupChat ? "Start Group Video Call" : "Start Video Call"} placement="bottom">
+                  <IconButton
+                    icon={<FaVideo />}
+                    onClick={startVideoCall}
+                    bg="rgba(72, 187, 120, 0.25)"
+                    border="1px solid rgba(72, 187, 120, 0.5)"
+                    color="green.300"
+                    borderRadius="full"
+                    size="sm"
+                    _hover={{
+                      bg: "green.500",
+                      color: "white",
+                      transform: "scale(1.08)",
+                      boxShadow: "0 0 16px rgba(72, 187, 120, 0.6)",
+                    }}
+                    transition="all 0.2s ease"
+                    aria-label="Start Video Call"
+                  />
+                </Tooltip>
+
+                {!selectedChat.isGroupChat ? (
+                  <ProfileModal
+                    user={selectedChat.users && selectedChat.users.length > 0 ? getSenderFull(user, selectedChat.users) : user}
+                    chatId={selectedChat._id}
+                    onBackgroundChange={fetchChatBg}
+                  />
+                ) : (
+                  <UpdateGroupChatModal
+                    fetchMessages={fetchMessages}
+                    fetchAgain={fetchAgain}
+                    setFetchAgain={setFetchAgain}
+                    onBackgroundChange={fetchChatBg}
+                  />
+                )}
+              </Flex>
             </Flex>
           </Box>
-          {/* Chat Body */}
+
+          {/* Chat Body & Message Stream */}
           <Box
             display="flex"
             flexDir="column"
             justifyContent="space-between"
-            p={6}
+            p={{ base: 3, md: 4 }}
             bg={chatBg.type === "image" ? "transparent" : chatBg.value}
             backgroundImage={chatBg.type === "image" ? `url(${chatBg.value})` : undefined}
             backgroundSize={chatBg.type === "image" ? "cover" : undefined}
             backgroundPosition={chatBg.type === "image" ? "center" : undefined}
             w="100%"
-            h="calc(100% - 88px)" // 88px = header height (p=4 + font + padding)
-            borderRadius="20px"
-            boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
-            border="1px solid rgba(102, 126, 234, 0.1)"
-            mt={0}
+            flex="1"
+            minH="0"
+            borderRadius="0 0 18px 18px"
+            position="relative"
+            overflow="hidden"
           >
             {loading ? (
               <Flex justify="center" align="center" h="100%">
-                <Spinner
-                  size="xl"
-                  color="purple.500"
-                  thickness="4px"
-                  speed="0.65s"
-                />
+                <Spinner size="xl" color="purple.500" thickness="4px" speed="0.65s" />
               </Flex>
             ) : (
-              <Box 
-                flex="1" 
-                mb={6}
-                pr={2}
-                overflow="hidden"
-                display="flex"
-                flexDirection="column"
-              >
+              <Box flex="1" minH="0" overflow="hidden" display="flex" flexDirection="column" mb={3}>
                 <ScrollableChat messages={messages} socket={socketRef.current} />
               </Box>
             )}
 
-            <FormControl
-              onKeyDown={sendMessage}
-              id="first-name"
-              isRequired
-              mt="auto"
-              flexShrink="0"
-            >
-              {istyping ? (
-                <Box mb={3} p={2} bg="purple.50" borderRadius="lg">
-                  <Lottie
-                    options={defaultOptions}
-                    width={40}
-                    style={{ marginLeft: 0 }}
-                  />
+            {/* Typing indicator & Message Input Bar */}
+            <FormControl onKeyDown={sendMessage} id="message-input-form" isRequired flexShrink={0}>
+              {istyping && (
+                <Box mb={2} p={1.5} bg="rgba(255, 255, 255, 0.85)" backdropFilter="blur(8px)" borderRadius="lg" w="fit-content">
+                  <Lottie options={defaultOptions} width={36} style={{ marginLeft: 0 }} />
                 </Box>
-              ) : null}
-              <Flex position="relative" alignItems="center">
+              )}
+
+              <Flex
+                position="relative"
+                alignItems="center"
+                bg="white"
+                borderRadius="full"
+                boxShadow="0 4px 20px rgba(0, 0, 0, 0.12)"
+                border="1px solid rgba(107, 70, 193, 0.25)"
+                p="3px"
+              >
                 <Input
-                  variant="filled"
-                  bg="white"
-                  placeholder="Type your message here..."
+                  variant="unstyled"
+                  placeholder="Type your message in YapMonster..."
                   value={newMessage}
                   onChange={typingHandler}
-                  _placeholder={{ color: "gray.500" }}
+                  _placeholder={{ color: "gray.400", fontSize: "sm" }}
                   color="gray.800"
-                  borderRadius="full"
-                  border="2px solid"
-                  borderColor="purple.200"
-                  focusBorderColor="purple.400"
-                  boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
-                  _focus={{
-                    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
-                    transform: "translateY(-1px)",
-                    transition: "all 0.2s ease-in-out"
-                  }}
-                  transition="all 0.2s ease-in-out"
-                  fontSize="md"
+                  px={5}
+                  py={2.5}
+                  fontSize="sm"
                   fontWeight="500"
-                  pr="60px" // Make room for the send button
                 />
                 <IconButton
                   icon={<Icon as={ArrowForwardIcon} />}
                   onClick={sendMessage}
-                  position="absolute"
-                  right="4px"
-                  colorScheme="purple"
+                  bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                  color="white"
                   borderRadius="full"
                   size="sm"
                   isDisabled={!newMessage.trim()}
                   _hover={{
-                    transform: "scale(1.05)",
-                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)"
+                    transform: "scale(1.08)",
+                    boxShadow: "0 4px 14px rgba(90, 103, 216, 0.5)",
                   }}
+                  _active={{ transform: "scale(0.96)" }}
                   transition="all 0.2s ease-in-out"
                   aria-label="Send message"
                 />
@@ -599,45 +522,44 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           </Box>
         </>
       ) : (
-        <Box 
-          display="flex" 
-          alignItems="center" 
-          justifyContent="center" 
-          h="100%" 
+        /* Empty State */
+        <Flex
+          direction="column"
+          alignItems="center"
+          justifyContent="center"
+          h="100%"
           w="100%"
-          bg="#E6E6FA"
-          borderRadius="20px"
-          boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+          bg="rgba(5, 11, 28, 0.75)"
+          backdropFilter="blur(20px)"
+          borderRadius="24px"
+          border="1px solid rgba(255, 255, 255, 0.06)"
+          p={8}
+          textAlign="center"
         >
-          <VStack spacing={6}>
+          <VStack spacing={5} maxW="440px">
             <Box
-              p={8}
-              bg="white"
-              borderRadius="full"
-              boxShadow="0 8px 32px rgba(90, 103, 216, 0.2)"
+              p={6}
+              bg="rgba(255, 255, 255, 0.08)"
+              backdropFilter="blur(10px)"
+              borderRadius="3xl"
+              boxShadow="0 12px 36px rgba(0, 0, 0, 0.5)"
+              border="1px solid rgba(255, 255, 255, 0.12)"
             >
-              <Icon as={ChatIcon} w={16} h={16} color="purple.600" />
+              <Icon as={FaComments} w={12} h={12} color="#BAE6FD" />
             </Box>
-            <Text 
-              fontSize={{ base: "2xl", md: "3xl" }} 
-              fontFamily="'Poppins', sans-serif" 
-              fontWeight="700"
-              color="purple.700"
-              textAlign="center"
-              maxW="400px"
-            >
-              Click on a user to start chatting
-            </Text>
-            <Text 
-              fontSize="md" 
-              color="gray.600"
-              textAlign="center"
-              maxW="300px"
-            >
-              Select a conversation from the sidebar to begin messaging
+
+            <Box>
+              <YapMonsterWordmark size="xl" color="lightBlue" glow={true} />
+              <Text fontSize="md" color="white" fontWeight="700" mt={2}>
+                Where Conversations Come Alive
+              </Text>
+            </Box>
+
+            <Text fontSize="sm" color="rgba(255, 255, 255, 0.7)" lineHeight={1.6}>
+              Select a conversation from the sidebar or click <b>Find User</b> to start a private chat or multi-person group room.
             </Text>
           </VStack>
-        </Box>
+        </Flex>
       )}
 
       {/* Video Call Modal */}
@@ -664,7 +586,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           onDecline={handleDeclineIncomingCall}
         />
       )}
-    </>
+    </Box>
   );
 };
 

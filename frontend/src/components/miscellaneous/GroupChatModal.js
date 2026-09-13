@@ -214,25 +214,35 @@ const GroupChatModal = ({ children }) => {
       <span onClick={onOpen}>{children}</span>
 
       <Modal onClose={onClose} isOpen={isOpen} isCentered size="lg">
-        <ModalOverlay />
-        <ModalContent>
+        <ModalOverlay bg="rgba(0, 0, 0, 0.75)" backdropFilter="blur(8px)" />
+        <ModalContent
+          bg="linear-gradient(180deg, #050a1f 0%, #020617 100%)"
+          color="white"
+          borderRadius="24px"
+          border="1px solid rgba(255, 255, 255, 0.1)"
+          boxShadow="0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(90, 103, 216, 0.2)"
+          overflow="hidden"
+        >
           <ModalHeader
-            fontSize="35px"
-            fontFamily="Work sans"
+            fontSize="xl"
+            fontWeight="800"
+            fontFamily="'Plus Jakarta Sans', sans-serif"
             display="flex"
             justifyContent="center"
-            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+            bg="rgba(10, 18, 42, 0.95)"
             color="white"
+            borderBottom="1px solid rgba(255, 255, 255, 0.08)"
+            py={4}
           >
             Create Group Chat
           </ModalHeader>
-          <ModalCloseButton color="white" />
+          <ModalCloseButton color="white" borderRadius="full" _hover={{ bg: "rgba(255, 255, 255, 0.1)" }} />
           <ModalBody
             display="flex"
             flexDirection="column"
             alignItems="center"
-            bg="#E6E6FA"
-            p={4}
+            bg="transparent"
+            p={6}
             overflowY="auto"
             maxH="70vh"
             css={{
@@ -251,7 +261,7 @@ const GroupChatModal = ({ children }) => {
               scrollBehavior: 'smooth',
             }}
           >
-            <VStack spacing={4} w="100%">
+            <VStack spacing={5} w="100%">
               {/* Group Profile Picture Section */}
               <Box position="relative">
                 <Avatar
@@ -259,21 +269,25 @@ const GroupChatModal = ({ children }) => {
                   cursor="pointer"
                   name={groupChatName || "Group"}
                   src={groupPic}
-                  border="4px solid"
-                  borderColor="purple.500"
+                  border="3px solid #60A5FA"
+                  boxShadow="0 0 20px rgba(96, 165, 250, 0.35)"
                   onClick={triggerFileInput}
-                  _hover={{ opacity: 0.8 }}
-                  bg={groupPic ? "transparent" : "purple.600"}
+                  _hover={{ opacity: 0.85, transform: "scale(1.02)" }}
+                  transition="all 0.2s ease"
+                  bg={groupPic ? "transparent" : "rgba(90, 103, 216, 0.4)"}
                 />
                 <IconButton
                   icon={<EditIcon />}
                   size="sm"
-                  colorScheme="purple"
+                  bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+                  color="white"
                   position="absolute"
                   bottom="0"
                   right="0"
                   borderRadius="full"
+                  border="2px solid #020617"
                   onClick={triggerFileInput}
+                  _hover={{ transform: "scale(1.1)", filter: "brightness(1.15)" }}
                   aria-label="Upload group picture"
                 />
                 <input
@@ -286,32 +300,50 @@ const GroupChatModal = ({ children }) => {
               </Box>
 
               {/* Group Name Input */}
-              <FormControl>
-                <FormLabel color="purple.700" fontWeight="600">
+              <FormControl isRequired>
+                <FormLabel color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase">
                   Group Name
                 </FormLabel>
                 <Input
-                  placeholder="Enter group name"
+                  placeholder="e.g. Design Team, Study Group"
                   value={groupChatName || ""}
                   onChange={(e) => setGroupChatName(e.target.value)}
-                  bg="white"
-                  focusBorderColor="purple.500"
-                  borderColor="purple.300"
+                  bg="rgba(255, 255, 255, 0.06)"
+                  border="1px solid rgba(255, 255, 255, 0.12)"
+                  color="white"
+                  borderRadius="xl"
+                  fontSize="sm"
+                  h="44px"
+                  _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                  _focus={{
+                    borderColor: "#60A5FA",
+                    bg: "rgba(255, 255, 255, 0.09)",
+                    boxShadow: "0 0 0 1px #60A5FA",
+                  }}
                 />
               </FormControl>
 
               {/* Add Users Section */}
               <FormControl>
-                <FormLabel color="purple.700" fontWeight="600">
+                <FormLabel color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase">
                   Add Members
                 </FormLabel>
                 <Input
-                  placeholder="Search users e.g., John, Piyush, Jane"
+                  placeholder="Search users by name or email..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  bg="white"
-                  focusBorderColor="purple.500"
-                  borderColor="purple.300"
+                  bg="rgba(255, 255, 255, 0.06)"
+                  border="1px solid rgba(255, 255, 255, 0.12)"
+                  color="white"
+                  borderRadius="xl"
+                  fontSize="sm"
+                  h="44px"
+                  _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                  _focus={{
+                    borderColor: "#60A5FA",
+                    bg: "rgba(255, 255, 255, 0.09)",
+                    boxShadow: "0 0 0 1px #60A5FA",
+                  }}
                 />
               </FormControl>
 
@@ -321,10 +353,11 @@ const GroupChatModal = ({ children }) => {
                   w="100%"
                   display="flex"
                   flexWrap="wrap"
-                  bg="purple.200"
-                  p={2}
-                  borderRadius="lg"
-                  mb={3}
+                  bg="rgba(255, 255, 255, 0.04)"
+                  border="1px solid rgba(255, 255, 255, 0.08)"
+                  p={2.5}
+                  borderRadius="xl"
+                  gap={1}
                 >
                   {selectedUsers.map((u) => (
                     <UserBadgeItem
@@ -338,23 +371,37 @@ const GroupChatModal = ({ children }) => {
 
               {/* Search Results */}
               {loading ? (
-                <Text color="purple.600">Loading...</Text>
+                <Text color="#BAE6FD" fontSize="xs" fontWeight="600">Searching users...</Text>
               ) : (
-                searchResult
-                  ?.slice(0, 4)
-                  .map((user) => (
-                    <UserListItem
-                      key={user._id}
-                      user={user}
-                      handleFunction={() => handleGroup(user)}
-                    />
-                  ))
+                <VStack spacing={1.5} w="100%" align="stretch">
+                  {searchResult
+                    ?.slice(0, 4)
+                    .map((u) => (
+                      <UserListItem
+                        key={u._id}
+                        user={u}
+                        handleFunction={() => handleGroup(u)}
+                      />
+                    ))}
+                </VStack>
               )}
             </VStack>
           </ModalBody>
-          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
-            <Button onClick={handleSubmit} bg="linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" color="white" _hover={{ bg: "linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)" }}>
-              Create Chat
+          <ModalFooter bg="rgba(4, 9, 24, 0.95)" borderTop="1px solid rgba(255, 255, 255, 0.08)" py={3.5} px={6}>
+            <Button
+              onClick={handleSubmit}
+              bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+              color="white"
+              borderRadius="xl"
+              px={6}
+              h="42px"
+              fontWeight="700"
+              fontSize="sm"
+              _hover={{ transform: "translateY(-1px)", boxShadow: "0 6px 20px rgba(90, 103, 216, 0.5)" }}
+              _active={{ transform: "translateY(0)" }}
+              transition="all 0.2s ease"
+            >
+              Create Group
             </Button>
           </ModalFooter>
         </ModalContent>

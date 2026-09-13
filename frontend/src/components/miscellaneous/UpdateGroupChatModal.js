@@ -398,25 +398,35 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
       <IconButton display={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
 
       <Modal onClose={onClose} isOpen={isOpen} isCentered size="lg">
-        <ModalOverlay />
-        <ModalContent>
+        <ModalOverlay bg="rgba(0, 0, 0, 0.75)" backdropFilter="blur(8px)" />
+        <ModalContent
+          bg="linear-gradient(180deg, #050a1f 0%, #020617 100%)"
+          color="white"
+          borderRadius="24px"
+          border="1px solid rgba(255, 255, 255, 0.1)"
+          boxShadow="0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(90, 103, 216, 0.2)"
+          overflow="hidden"
+        >
           <ModalHeader
-            fontSize="35px"
-            fontFamily="Work sans"
+            fontSize="xl"
+            fontWeight="800"
+            fontFamily="'Plus Jakarta Sans', sans-serif"
             display="flex"
             justifyContent="center"
-            bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
+            bg="rgba(10, 18, 42, 0.95)"
             color="white"
+            borderBottom="1px solid rgba(255, 255, 255, 0.08)"
+            py={4}
           >
             {selectedChat.chatName}
           </ModalHeader>
 
-          <ModalCloseButton color="white" />
+          <ModalCloseButton color="white" borderRadius="full" _hover={{ bg: "rgba(255, 255, 255, 0.1)" }} />
           <ModalBody 
             display="flex" 
             flexDir="column" 
             alignItems="center"
-            bg="#E6E6FA"
+            bg="transparent"
             overflowY="auto"
             maxH="70vh"
             p={6}
@@ -535,10 +545,18 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
               {/* Group Members */}
               <Box w="100%">
-                <Text color="purple.700" fontWeight="600" mb={3}>
+                <Text color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase" mb={2.5}>
                   Group Members
                 </Text>
-                <Box display="flex" flexWrap="wrap" pb={3}>
+                <Box
+                  display="flex"
+                  flexWrap="wrap"
+                  bg="rgba(255, 255, 255, 0.04)"
+                  border="1px solid rgba(255, 255, 255, 0.08)"
+                  p={2.5}
+                  borderRadius="xl"
+                  gap={1}
+                >
                   {selectedChat.users.map((u) => (
                     <UserBadgeItem
                       key={u._id}
@@ -552,7 +570,7 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
               {/* Rename Group */}
               <FormControl>
-                <FormLabel color="purple.700" fontWeight="600">
+                <FormLabel color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase">
                   Rename Group
                 </FormLabel>
                 <HStack>
@@ -560,17 +578,27 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
                     placeholder="New group name"
                     value={groupChatName || ""}
                     onChange={(e) => setGroupChatName(e.target.value)}
-                    bg="white"
-                    focusBorderColor="purple.500"
-                    borderColor="purple.300"
+                    bg="rgba(255, 255, 255, 0.06)"
+                    border="1px solid rgba(255, 255, 255, 0.12)"
+                    color="white"
+                    borderRadius="xl"
+                    fontSize="sm"
+                    h="44px"
+                    _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                    _focus={{ borderColor: "#60A5FA", bg: "rgba(255, 255, 255, 0.09)", boxShadow: "0 0 0 1px #60A5FA" }}
                   />
                   <Button
                     variant="solid"
                     bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)"
                     color="white"
+                    borderRadius="xl"
+                    h="44px"
+                    px={5}
+                    fontWeight="700"
+                    fontSize="sm"
                     isLoading={renameloading}
                     onClick={handleRename}
-                    _hover={{ bg: "linear-gradient(135deg, #6B46C1 0%, #7C3AED 100%)" }}
+                    _hover={{ transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(90, 103, 216, 0.4)" }}
                   >
                     Update
                   </Button>
@@ -579,34 +607,41 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
 
               {/* Add User */}
               <FormControl>
-                <FormLabel color="purple.700" fontWeight="600">
+                <FormLabel color="rgba(255, 255, 255, 0.85)" fontSize="xs" fontWeight="700" letterSpacing="0.04em" textTransform="uppercase">
                   Add Member
                 </FormLabel>
                 <Input
-                  placeholder="Search users to add"
+                  placeholder="Search users to add..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  bg="white"
-                  focusBorderColor="purple.500"
-                  borderColor="purple.300"
+                  bg="rgba(255, 255, 255, 0.06)"
+                  border="1px solid rgba(255, 255, 255, 0.12)"
+                  color="white"
+                  borderRadius="xl"
+                  fontSize="sm"
+                  h="44px"
+                  _placeholder={{ color: "rgba(255, 255, 255, 0.45)" }}
+                  _focus={{ borderColor: "#60A5FA", bg: "rgba(255, 255, 255, 0.09)", boxShadow: "0 0 0 1px #60A5FA" }}
                 />
               </FormControl>
 
               {/* Search Results */}
               {loading ? (
-                <Spinner size="lg" />
+                <Spinner size="md" color="#BAE6FD" />
               ) : (
-                searchResult?.map((user) => (
-                  <UserListItem
-                    key={user._id}
-                    user={user}
-                    handleFunction={() => handleAddUser(user)}
-                  />
-                ))
+                <VStack spacing={1.5} w="100%" align="stretch">
+                  {searchResult?.map((u) => (
+                    <UserListItem
+                      key={u._id}
+                      user={u}
+                      handleFunction={() => handleAddUser(u)}
+                    />
+                  ))}
+                </VStack>
               )}
             </VStack>
           </ModalBody>
-          <ModalFooter bg="linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)">
+          <ModalFooter bg="rgba(4, 9, 24, 0.95)" borderTop="1px solid rgba(255, 255, 255, 0.08)" py={3.5} px={6}>
             <Button
               onClick={() => {
                 if (window.confirm("Are you sure you want to leave this group?")) {
@@ -614,6 +649,11 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain, onBack
                 }
               }}
               colorScheme="red"
+              borderRadius="xl"
+              px={5}
+              h="40px"
+              fontWeight="700"
+              fontSize="sm"
             >
               Leave Group
             </Button>

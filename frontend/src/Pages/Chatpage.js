@@ -1,5 +1,5 @@
-import { Box } from "@chakra-ui/react";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Box, Flex } from "@chakra-ui/react";
 import Chatbox from "../components/ChatBox";
 import MyChats from "../components/MyChats";
 import SideDrawer from "../components/miscellaneous/SideDrawer";
@@ -10,48 +10,54 @@ const Chatpage = () => {
   const { user } = ChatState();
 
   return (
-    <Box 
-      width="100vw" 
-      height="100vh" 
-      display="flex"
-      flexDirection="column"
+    <Flex
+      direction="column"
+      w="100vw"
+      h="100vh"
       overflow="hidden"
-      bg="#E6E6FA"
+      bg="linear-gradient(135deg, #020617 0%, #080d24 50%, #020617 100%)"
+      position="relative"
     >
+      {/* Top Navigation Bar with Wordmark */}
       {user && <SideDrawer />}
-      <Box
-        display="flex"
-        justifyContent="flex-start"
-        alignItems="stretch"
-        width="100%"
+
+      {/* Main Workspace Body */}
+      <Flex
         flex="1"
         minH="0"
-        padding="10px"
-        bg="transparent"
+        minW="0"
+        w="100%"
+        p={{ base: 2, sm: 3, md: 4 }}
+        gap={{ base: 2, md: 4 }}
+        alignItems="stretch"
+        overflow="hidden"
       >
-        {/* MyChats section */}
+        {/* Left: Chat List Panel */}
         <Box
-          width={{ base: "100%", md: "30%" }}
-          height="100%"
-          padding="10px"
-          bg="transparent"
+          display={{ base: "flex", md: "flex" }}
+          w={{ base: "100%", md: "360px", lg: "400px" }}
+          maxW={{ base: "100%", md: "420px" }}
+          flexShrink={0}
+          h="100%"
+          minH="0"
         >
           {user && <MyChats fetchAgain={fetchAgain} />}
         </Box>
 
-        {/* Chatbox section */}
+        {/* Right: Active Conversation Panel */}
         <Box
-          width={{ base: "100%", md: "70%" }}
-          height="100%"
-          padding="10px"
-          bg="transparent"
+          flex="1"
+          minW="0"
+          minH="0"
+          h="100%"
+          display={{ base: "flex", md: "flex" }}
         >
           {user && (
             <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
           )}
         </Box>
-      </Box>
-    </Box>
+      </Flex>
+    </Flex>
   );
 };
 

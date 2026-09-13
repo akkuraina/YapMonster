@@ -6,37 +6,37 @@ const UserListItem = ({ user, handleFunction }) => {
     <Box
       onClick={handleFunction}
       cursor="pointer"
-      bg="white"
+      bg="rgba(255, 255, 255, 0.05)"
       _hover={{
         background: "linear-gradient(135deg, #5A67D8 0%, #6B46C1 100%)",
         color: "white",
-        transform: "translateY(-2px)",
-        boxShadow: "0 4px 12px rgba(90, 103, 216, 0.3)",
-        transition: "all 0.3s ease-in-out"
+        transform: "translateY(-1px)",
+        boxShadow: "0 4px 14px rgba(90, 103, 216, 0.35)",
+        borderColor: "rgba(255, 255, 255, 0.25)",
       }}
       w="100%"
       display="flex"
       alignItems="center"
-      color="gray.700"
-      px={3}
-      py={2}
+      color="white"
+      px={3.5}
+      py={2.5}
       mb={2}
-      borderRadius="lg"
-      border="1px solid"
-      borderColor="purple.200"
-      transition="all 0.3s ease-in-out"
+      borderRadius="xl"
+      border="1px solid rgba(255, 255, 255, 0.08)"
+      transition="all 0.2s ease-in-out"
     >
       <Avatar
-        mr={2}
+        mr={3}
         size="sm"
         cursor="pointer"
         name={user.name}
         src={user.pic}
+        border="1.5px solid rgba(255, 255, 255, 0.2)"
       />
       <Box>
-        <Text>{user.name}</Text>
-        <Text fontSize="xs">
-          <b>Email : </b>
+        <Text fontSize="sm" fontWeight="600">{user.name}</Text>
+        <Text fontSize="xs" color="rgba(255, 255, 255, 0.6)">
+          <b>Email: </b>
           {user.email}
         </Text>
       </Box>
