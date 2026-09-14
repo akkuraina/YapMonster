@@ -320,8 +320,8 @@ const MyChats = ({ fetchAgain }) => {
                                   : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
                               </Text>
                               {chat.latestMessage.deletedForEveryone
-                                ? "🚫 This message was deleted"
-                                : "🎤 Voice message"}
+                                ? "This message was deleted"
+                                : "Voice message"}
                             </>
                           ) : (
                             <>
@@ -331,7 +331,7 @@ const MyChats = ({ fetchAgain }) => {
                                   : `${chat.latestMessage.sender?.name?.split(" ")[0] || "User"}: `}
                               </Text>
                               {chat.latestMessage.deletedForEveryone
-                                ? "🚫 This message was deleted"
+                                ? "This message was deleted"
                                 : chat.latestMessage.content}
                             </>
                           )}
