@@ -53,6 +53,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     chatId: null,
     isInitiator: false,
     isAnswered: false,
+    isGroupChat: false,
     startTime: null,
     logged: false,
   });
@@ -530,6 +531,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       chatId: selectedChat._id,
       isInitiator: true,
       isAnswered: false,
+      isGroupChat: selectedChat.isGroupChat,
       startTime: Date.now(),
       logged: false,
     };
@@ -563,6 +565,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       chatId: incomingCall.chatId,
       isInitiator: false,
       isAnswered: true,
+      isGroupChat: incomingCall.isGroupChat,
       startTime: Date.now(),
       logged: false,
     };

@@ -234,8 +234,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("end call", ({ chatId, userId }) => {
-    if (chatId) {
+  socket.on("end call", ({ chatId, userId, isGroupChat }) => {
+    // For group calls, one member leaving should NOT end the call for everyone else.
+    // LiveKit handles peer departure natively — remaining participants stay connected.
+    // Only broadcast "call ended" for 1-on-1 calls where the remote party needs to know.
+    if (chatId && !isGroupChat) {
       socket.to(chatId).emit("call ended", { chatId, userId });
     }
   });

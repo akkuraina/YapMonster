@@ -111,7 +111,10 @@ const VideoCallModal = ({ isOpen, onClose, chatId, chatName, isGroupChat, user, 
 
   const handleDisconnected = () => {
     if (socketRef?.current && chatId) {
-      socketRef.current.emit("end call", { chatId, userId: user._id });
+      // Pass isGroupChat so the server knows NOT to broadcast "call ended" to
+      // all participants when one member leaves a group call. LiveKit handles
+      // peer departure natively; the other participants should remain connected.
+      socketRef.current.emit("end call", { chatId, userId: user._id, isGroupChat });
     }
     setToken("");
     onClose();
